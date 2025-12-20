@@ -913,13 +913,13 @@ public class Test {
 }
 ```
 看一下demo运行后的对话内容
+
 ![历史会话页面](docs/img/conversation-4.png)
 
 由于配置的最近消息数是两轮，所以当第五次询问大模型时，其已经丢失了名字信息
 再看一下记忆
 
-![历史会话页面](docs/img/conversation-5.png)
-也只有最后两轮
+![历史会话页面](docs/img/conversation-5.png)也只有最后两轮
 
 
 ### 5.2摘要Demo
