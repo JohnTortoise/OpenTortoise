@@ -1,0 +1,221 @@
+<div th:fragment="content">
+    <div class="px-4 py-6 sm:px-0">
+        <!-- Page Header -->
+        <div class="config-header relative">
+            <div class="relative z-10">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
+                            <i class="fas fa-user text-2xl"></i>
+                            个人信息
+                        </h1>
+                        <p class="text-blue-100">查看和管理您的个人信息</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Profile Card -->
+        <div class="config-card p-6 mb-6">
+            <div id="profile-loading" class="text-center py-8">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p class="text-lg font-medium text-gray-600">加载中...</p>
+                </div>
+            </div>
+            
+            <div id="profile-content" class="hidden">
+                <form id="profile-form" class="space-y-6">
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-id-card mr-2 text-blue-600"></i>
+                                用户ID
+                            </label>
+                            <input type="text" id="user-id" readonly
+                                   class="input-modern w-full bg-gray-50 cursor-not-allowed">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-envelope mr-2 text-blue-600"></i>
+                                邮箱 <span class="text-red-500">*</span>
+                            </label>
+                            <input type="email" id="user-email" required
+                                   class="input-modern w-full"
+                                   placeholder="请输入邮箱">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-shield-alt mr-2 text-blue-600"></i>
+                                角色
+                            </label>
+                            <input type="text" id="user-role" readonly
+                                   class="input-modern w-full bg-gray-50 cursor-not-allowed">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-key mr-2 text-blue-600"></i>
+                                新密码
+                            </label>
+                            <input type="password" id="user-password"
+                                   class="input-modern w-full"
+                                   placeholder="留空则不修改密码">
+                            <span class="text-xs text-gray-500 mt-1">如需修改密码，请输入新密码</span>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-calendar-plus mr-2 text-blue-600"></i>
+                                创建时间
+                            </label>
+                            <input type="text" id="user-create-time" readonly
+                                   class="input-modern w-full bg-gray-50 cursor-not-allowed">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-calendar-check mr-2 text-blue-600"></i>
+                                更新时间
+                            </label>
+                            <input type="text" id="user-update-time" readonly
+                                   class="input-modern w-full bg-gray-50 cursor-not-allowed">
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                        <button type="button" id="cancel-btn"
+                                class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
+                            <i class="fas fa-times mr-2"></i>
+                            取消
+                        </button>
+                        <button type="submit" id="save-btn"
+                                class="btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
+                            <i class="fas fa-save mr-2"></i>
+                            保存修改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            let isPageActive = false;
+            let originalData = {};
+            
+            const profileLoading = document.getElementById('profile-loading');
+            const profileContent = document.getElementById('profile-content');
+            const profileForm = document.getElementById('profile-form');
+            const saveBtn = document.getElementById('save-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            
+            // Initialize page active state
+            isPageActive = document.getElementById('user-profile-page')?.classList.contains('active-page') || false;
+            
+            // Load initial data only if page is active
+            if (isPageActive) {
+                loadProfile();
+            }
+            
+            // Handle page changes
+            document.addEventListener('pageChanged', function(e) {
+                if (e.detail === 'user-profile') {
+                    if (!isPageActive) {
+                        isPageActive = true;
+                        loadProfile();
+                    }
+                } else {
+                    isPageActive = false;
+                }
+            });
+            
+            // Event listeners
+            profileForm.addEventListener('submit', handleSave);
+            cancelBtn.addEventListener('click', resetForm);
+            
+            function loadProfile() {
+                profileLoading.classList.remove('hidden');
+                profileContent.classList.add('hidden');
+                
+                authenticatedFetch('/api/user/profile')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data) {
+                            const user = data.data;
+                            originalData = { ...user };
+                            
+                            document.getElementById('user-id').value = user.id || '';
+                            document.getElementById('user-email').value = user.email || '';
+                            document.getElementById('user-role').value = user.roleName || '';
+                            document.getElementById('user-password').value = '';
+                            document.getElementById('user-create-time').value = user.createTime || '';
+                            document.getElementById('user-update-time').value = user.updateTime || '';
+                            
+                            profileLoading.classList.add('hidden');
+                            profileContent.classList.remove('hidden');
+                        } else {
+                            showToast(data.message || '加载用户信息失败', false);
+                            profileLoading.classList.add('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('加载用户信息失败', false);
+                        profileLoading.classList.add('hidden');
+                    });
+            }
+            
+            function handleSave(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('user-email').value;
+                const password = document.getElementById('user-password').value;
+                
+                const updateData = {
+                    email: email
+                };
+                
+                if (password) {
+                    updateData.password = password;
+                }
+                
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+                
+                authenticatedFetch('/api/user/profile/update', {
+                    method: 'POST',
+                    body: JSON.stringify(updateData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('保存成功', true);
+                            loadProfile();
+                        } else {
+                            showToast(data.message || '保存失败', false);
+                        }
+                    })
+                    .catch(error => {
+                        showToast('保存失败，请稍后重试', false);
+                    })
+                    .finally(() => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>保存修改';
+                    });
+            }
+            
+            function resetForm() {
+                if (originalData.id) {
+                    document.getElementById('user-email').value = originalData.email || '';
+                    document.getElementById('user-password').value = '';
+                }
+            }
+        });
+    </script>
+</div>
+

@@ -1,0 +1,90 @@
+Tortoise AI Platform
+Copyright (c) 2025 Tortoise AI Contributors
+
+This product includes software developed by the Tortoise AI team.
+
+-------------------------------------------------------------------------------
+Third-Party Software Notices
+-------------------------------------------------------------------------------
+
+This project includes the following third-party software components.
+Each component is subject to its own license terms.
+
+-------------------------------------------------------------------------------
+Spring Boot
+-------------------------------------------------------------------------------
+Copyright © 2012-2024 Pivotal Software, Inc.
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+MyBatis-Plus
+-------------------------------------------------------------------------------
+Copyright © 2011-2024 Baomidou
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+MySQL Connector/J
+-------------------------------------------------------------------------------
+Copyright © 2002-2023 Oracle Corporation
+License: GNU General Public License v2.0 with FOSS Exception
+https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+-------------------------------------------------------------------------------
+Project Lombok
+-------------------------------------------------------------------------------
+Copyright © 2009-2024 Project Lombok
+License: MIT License
+https://opensource.org/licenses/MIT
+
+-------------------------------------------------------------------------------
+JJWT (Java JWT)
+-------------------------------------------------------------------------------
+Copyright © 2014-2023 Okta, Inc.
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+EasyExcel
+-------------------------------------------------------------------------------
+Copyright © 2017-2024 Alibaba Group
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+OkHttp
+-------------------------------------------------------------------------------
+Copyright © 2019 Square, Inc.
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+Apache Log4j 2
+-------------------------------------------------------------------------------
+Copyright © 2012-2024 The Apache Software Foundation
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+Jackson
+-------------------------------------------------------------------------------
+Copyright © 2008-2024 FasterXML
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+License Summary
+-------------------------------------------------------------------------------
+This product bundles software licensed under the following licenses:
+
+- MIT License
+- Apache License, Version 2.0
+- GNU GPL v2 with Classpath/FOSS Exception
+
+A copy of each license can be found at the URLs listed above or in the
+corresponding LICENSE files distributed with the dependencies.
+
+-------------------------------------------------------------------------------
+End of NOTICE
+-------------------------------------------------------------------------------
