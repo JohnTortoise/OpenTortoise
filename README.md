@@ -1,6 +1,10 @@
-# 🐢 OpenTortoise
+
 
 <div align="center">
+
+<img src="docs/img/favicon.ico" alt="大模型配置页面" width="64" height="64" style="vertical-align: middle;" />
+
+# OpenTortoise
 
 [![Version](https://img.shields.io/badge/version-1.0-blue.svg)](https://github.com/JohnTortoise/OpenTortoise)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -8,8 +12,6 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.johntortoise/tortoise-core)](https://central.sonatype.com/artifact/io.github.johntortoise/tortoise-core)
 
 **开箱即用的Java调用LLM中间件，一站式解决配置、调用、成本监控和智能记忆**
-
-[🚀 快速开始](#-快速开始) • [📚 文档](#-文档导航) • [💡 特性](#-核心特性) • [🔧 安装](#-安装)
 
 </div>
 
