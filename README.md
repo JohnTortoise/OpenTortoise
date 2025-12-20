@@ -1,98 +1,155 @@
-# Tortoise
-开箱即用的Java 调用LLM中间件，配置，调用，成本，记忆一把梭
+# 🐢 OpenTortoise
 
-## 快速开始
-1.在项目的pom.xml引入如下依赖
+<div align="center">
+
+[![Version](https://img.shields.io/badge/version-1.0-blue.svg)](https://github.com/JohnTortoise/OpenTortoise)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Java](https://img.shields.io/badge/Java-8+-orange.svg)](https://www.oracle.com/java/)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.johntortoise/tortoise-core)](https://central.sonatype.com/artifact/io.github.johntortoise/tortoise-core)
+
+**开箱即用的Java调用LLM中间件，一站式解决配置、调用、成本监控和智能记忆**
+
+[🚀 快速开始](#-快速开始) • [📚 文档](#-文档导航) • [💡 特性](#-核心特性) • [🔧 安装](#-安装)
+
+</div>
+
+---
+
+## ✨ 核心特性
+
+- 🚀 **开箱即用** - 简单配置即可开始使用，无需复杂设置
+- 💰 **成本监控** - 实时跟踪Token消耗和费用，支持多模型成本管理
+- 🧠 **智能记忆** - 支持多种记忆策略（截断、摘要、图谱），保持对话连贯性
+- 🔄 **流式调用** - 支持流式响应，提升用户体验
+- 🛠️ **管理后台** - 提供完整的Web管理界面，支持配置管理、数据导入等
+- 📊 **可视化监控** - 对话历史、成本统计、记忆管理一目了然
+
+## 📋 文档导航
+
+- [🚀 快速开始](#快速开始)
+- [🏗️ 核心组件](#核心组件)
+- [🖥️ 管理后台](#管理后台)
+- [🧠 记忆策略详解](#记忆策略详解)
+- [💻 开发示例](#开发示例)
+- [📚 API文档](#api文档)
+- [🤝 贡献指南](#贡献指南)
+
+---
+
+## 🚀 快速开始
+
+### 📦 安装依赖
+
+在项目的 `pom.xml` 中添加以下依赖：
+
 ```xml
-     <dependency>
-        <groupId>io.github.johntortoise</groupId>
-        <artifactId>tortoise-core</artifactId>
-        <version>1.0</version>
-     </dependency>
+<dependency>
+    <groupId>io.github.johntortoise</groupId>
+    <artifactId>tortoise-core</artifactId>
+    <version>1.0</version>
+</dependency>
 ```
-2.创建TortoiseClient并调用
-```java
-package io.github.johntortoise.demo.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+### 💻 基础使用
+
+创建 `TortoiseClient` 并开始对话：
+```java
+package io.github.johntortoise.demo;
+
 import io.github.johntortoise.core.client.TortoiseClient;
 import io.github.johntortoise.core.dto.model.ChatCompletionResponse;
 import io.github.johntortoise.core.dto.model.Model;
 import io.github.johntortoise.core.dto.sys.TortoiseMessage;
-import io.github.johntortoise.core.utils.ObjectMapperUtil;
 import java.math.BigDecimal;
 
-public class Test {
+public class QuickStartDemo {
 
-    private final static TortoiseClient<ChatCompletionResponse> tortoiseClient = TortoiseClient.create(ChatCompletionResponse.class);
+    // 创建Tortoise客户端
+    private final static TortoiseClient<ChatCompletionResponse> tortoiseClient =
+        TortoiseClient.create(ChatCompletionResponse.class);
 
-    public static void main(String[] args) throws JsonProcessingException {
-        //定义模型信息
-        Model model = Model.builder().modelName("doubao-seed-1-6-lite-251015")
-                .apiKey("857299ff-3489-435a-8d1b-9aaad1c89d9b")
-                .completeUrl("https://ark.cn-beijing.volces.com/api/v3/chat/completions")
-                .temperature(new BigDecimal("0.7"))
+    public static void main(String[] args) {
+        // 1. 配置模型信息
+        Model model = Model.builder()
+                .modelName("doubao-seed-1-6-lite-251015")  // 模型名称
+                .apiKey("your-api-key-here")              // API密钥
+                .completeUrl("https://ark.cn-beijing.volces.com/api/v3/chat/completions")  // API地址
+                .temperature(new BigDecimal("0.7"))       // 温度参数
                 .build();
 
-        //定义会话ID，一个聊天窗口对应唯一的conversationId
-        String conversationId = "1";
+        // 2. 定义会话ID（每个聊天窗口对应唯一ID）
+        String conversationId = "conversation_001";
 
-        //定义第一条消息
-        TortoiseMessage firstMessage = new TortoiseMessage("你好,我叫王大力");
+        // 3. 发送第一条消息
+        TortoiseMessage firstMessage = new TortoiseMessage("你好，我叫王大力");
         firstMessage.setConversationId(conversationId);
 
-        //传入模型和消息
-        ChatCompletionResponse firstMessageResp = tortoiseClient.chat(firstMessage, model);
+        ChatCompletionResponse firstResponse = tortoiseClient.chat(firstMessage, model);
+        System.out.println("第一次回复：" + firstResponse.getChoices().get(0).getMessage().getContent());
 
-        //定义第二条消息
+        // 4. 发送第二条消息（系统会自动维护对话历史）
         TortoiseMessage secondMessage = new TortoiseMessage("我叫什么名字，直接告诉我");
         secondMessage.setConversationId(conversationId);
 
-        ChatCompletionResponse secondMessageResp = tortoiseClient.chat(secondMessage, model);
+        ChatCompletionResponse secondResponse = tortoiseClient.chat(secondMessage, model);
+        System.out.println("第二次回复：" + secondResponse.getChoices().get(0).getMessage().getContent());
     }
 }
 ```
-3 控制台输出
+### 📋 运行结果
+
+运行上述代码，你将在控制台看到详细的请求和响应日志：
+
 ```text
-14:22:03.020 [main] INFO io.github.johntortoise.core.utils.LogUtil - [tortoise-llmReq] conversationId=1 | Url=https://ark.cn-beijing.volces.com/api/v3/chat/completions | Body={"model":"doubao-seed-1-6-lite-251015","messages":[{"content":"你好,我叫王大力","role":"user"}],"temperature":0.7,"stream":false,"stream_options":{"include_usage":false}}
-14:22:05.582 [main] INFO io.github.johntortoise.core.utils.LogUtil - [tortoise-llmResp] conversationId=1 | resp={"choices":[{"finish_reason":"stop","index":0,"logprobs":null,"message":{"content":"你好呀王大力！很高兴认识你～有什么我可以帮到你的吗？","reasoning_content":"\n用户现在说“你好，我叫王大力”，首先需要友好回应，打招呼，然后可以确认名字，保持亲切自然的语气。比如先回“你好呀王大力！很高兴认识你～”这样比较合适，符合日常交流的感觉，不需要太复杂，重点是友好回应对方的自我介绍。","role":"assistant"}}],"created":1765952525,"id":"02176595252337568fe52ee795c67552dfa14bf2f62824985d595","model":"doubao-seed-1-6-lite-251015","service_tier":"default","object":"chat.completion","usage":{"completion_tokens":89,"prompt_tokens":41,"total_tokens":130,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":70}}}
-14:22:05.683 [main] INFO io.github.johntortoise.core.utils.LogUtil - [tortoise-llmReq] conversationId=1 | Url=https://ark.cn-beijing.volces.com/api/v3/chat/completions | Body={"model":"doubao-seed-1-6-lite-251015","messages":[{"content":"你好,我叫王大力","role":"user"},{"content":"你好呀王大力！很高兴认识你～有什么我可以帮到你的吗？","role":"assistant"},{"content":"我叫什么名字，直接告诉我","role":"user"}],"temperature":0.7,"stream":false,"stream_options":{"include_usage":false}}
-14:22:07.468 [main] INFO io.github.johntortoise.core.utils.LogUtil - [tortoise-llmResp] conversationId=1 | resp={"choices":[{"finish_reason":"stop","index":0,"logprobs":null,"message":{"content":"你叫王大力。","reasoning_content":"\n用户现在问“我叫什么名字，直接告诉我”，首先看对话历史，前面用户说自己叫王大力，所以直接明确回答即可，不需要多余内容，保持简洁准确。","role":"assistant"}}],"created":1765952527,"id":"021765952525930c4dc4b915535437ad03877d2dfc54a033e1f3d","model":"doubao-seed-1-6-lite-251015","service_tier":"default","object":"chat.completion","usage":{"completion_tokens":47,"prompt_tokens":77,"total_tokens":124,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":42}}}
+[tortoise-llmReq] conversationId=conversation_001 | 正在调用LLM...
+[tortoise-llmResp] conversationId=conversation_001 | 收到LLM响应，Token消耗: 130
+第二次回复：你叫王大力。
 ```
 
-## 1.初始化客户端
-### 1.1直接创建
+> 💡 **注意**：第二次调用时，系统自动包含了对话历史，确保AI能记住用户名字。
+
+---
+
+## 🏗️ 核心组件
+
+### 🔧 客户端初始化
+
+#### 方式一：直接创建（基础模式）
 ```java
-    private final static TortoiseClient<ChatCompletionResponse> tortoiseClient = TortoiseClient.create(ChatCompletionResponse.class);
+// 直接创建客户端，适用于简单场景
+TortoiseClient<ChatCompletionResponse> client = TortoiseClient.create(ChatCompletionResponse.class);
 ```
-### 1.2接入管台创建
-若有接入tortoise-admin，则可使用如下代码，传入管台host和唯一SK(见4.3)
+
+#### 方式二：接入管理后台（高级模式）
 ```java
-    private final static TortoiseClient<String> adminTortoiseClient = TortoiseClient.createForAdmin(String.class,host,"xxxxx");
+// 接入tortoise-admin后台，获得完整功能支持
+String adminHost = "http://localhost:8080";
+String accessKey = "sk-xxxxxxxxxxxxxxxxx"; // 从管理后台获取
+
+TortoiseClient<ChatCompletionResponse> client =
+    TortoiseClient.createForAdmin(ChatCompletionResponse.class, adminHost, accessKey);
 ```
 
-## 2.重要组件说明
-### 2.1 TortoiseChatManger
-TortoiseChatManger是聊天管理接口，默认实现是DefaultTortoiseChatManger类，开发者也可自行实现该接口的方法
-或者有计划接入tortoise-admin,其将由AdminTortoiseChatManger实现
+### 📋 核心接口详解
 
-TortoiseChatManger接口中，分别有如下的三个方法
+#### 🗂️ TortoiseChatManger - 聊天管理器
+
+`TortoiseChatManger` 是聊天管理接口，负责管理对话流程：
+
+- **DefaultTortoiseChatManger**: 默认实现，适用于基础场景
+- **AdminTortoiseChatManger**: 管理后台实现，提供高级功能
+
+核心方法：
 ```java
-package io.github.johntortoise.core.manger.chat;
-
-import io.github.johntortoise.core.dto.model.Message;
-import io.github.johntortoise.core.dto.sys.AfterChatDTO;
-import java.util.List;
-
 public interface TortoiseChatManger {
-    
+
     /**
      * 校验是否超过限制
-     * @param conversationId conversationId 会话ID
-     * @return true表示超过，此次调用直接被拦住
+     * @param conversationId 会话ID
+     * @return true表示超过限制，此次调用将被拦截
      */
     Boolean checkLimit(String conversationId);
-    
+
     /**
      * 获取历史消息
      * @param conversationId 会话ID
@@ -102,58 +159,54 @@ public interface TortoiseChatManger {
 
     /**
      * 聊天后处理方法
-     * @param afterChatDTO 存储于本次会话响应的所有输入和输出
+     * @param afterChatDTO 包含本次会话的所有输入输出数据
      */
     void afterChat(AfterChatDTO afterChatDTO);
-    
 }
 ```
 
-#### 2.1.1 checkLimit
-通过client调用chat方法,最开始的逻辑,就是调用TortoiseChatManger的checkLimit方法
-在DefaultTortoiseChatManger中，默认返回false，即不做限制
-在AdminTortoiseChatManger中，会校验该conversationId是否超过token上限
-开发者也可以自己定义并实现该方法，可以做调用次数，调用频率等的限制
+##### 🔍 checkLimit - 限制校验
+- **触发时机**: 每次调用 `chat` 方法前首先执行
+- **DefaultTortoiseChatManger**: 返回 `false`，不进行任何限制
+- **AdminTortoiseChatManger**: 检查会话是否超过Token使用上限
+- **自定义扩展**: 开发者可实现调用次数、频率等限制逻辑
 
-#### 2.1.2 findHistoryChat
-在快速入门中，我们第二次与大模型对话时，仍然只需要传入消息内容和conversationId
-```text
-        //定义第二条消息
-        TortoiseMessage secondMessage = new TortoiseMessage("我叫什么名字，直接告诉我");
-        secondMessage.setConversationId(conversationId);
-        tortoiseClient.chat(secondMessage, model);
+##### 📚 findHistoryChat - 历史消息获取
+
+该方法负责为每次对话提供必要的上下文历史：
+
+**工作原理：**
+```java
+// 你只需要传入新消息和会话ID
+TortoiseMessage message = new TortoiseMessage("我叫什么名字？");
+message.setConversationId(conversationId);
+tortoiseClient.chat(message, model);
 ```
-而在调用日志中，我们可以看到，这一次的输入的messages如下
+
+**实际发送给大模型的完整消息：**
 ```json
 {
   "messages": [
-    {
-      "content": "你好,我叫王大力",
-      "role": "user"
-    },
-    {
-      "content": "你好呀王大力！很高兴认识你～有什么我可以帮到你的吗？",
-      "role": "assistant"
-    },
-    {
-      "content": "我叫什么名字，直接告诉我",
-      "role": "user"
-    }
+    {"content": "你好，我叫王大力", "role": "user"},
+    {"content": "你好呀王大力！", "role": "assistant"},
+    {"content": "我叫什么名字？", "role": "user"}
   ]
 }
 ```
-messages包含了我们的第一次对话，原因便是findHistoryChat方法，将历史的对话内容查找出来，一并给到了大模型
 
-在DefaultTortoiseChatManger中，历史的对话消息，以key为conversationId,value为List<Message>存储在内存的concurrentHashMap中
-因此DefaultTortoiseChatManger的findHistoryChat实现，直接通过map拿到message列表，在与大模型对话时，将message列表给到大模型
+**不同实现的差异：**
+- **DefaultTortoiseChatManger**: 内存存储，简单高效
+- **AdminTortoiseChatManger**: 数据库存储，支持复杂记忆策略
 
-在AdminTortoiseChatManger中，历史的对话消息，存储在数据库中，但与单纯的对话消息不同，findHistoryChat的内容，取决于对话时的sk背后配置的记忆策略(见4.3)
+##### 📝 afterChat - 对话后处理
 
-#### 2.1.3 afterChat
-在对话完成后，我们需要对这次对话的所有数据做一个处理，为整合后的数据
-AfterChatDTO主要由conversationId和MainInfo组成
+对话完成后对数据进行整合和存储：
 
-MainInfo存储着本次对话的历史消息，输入，输出，调用大模型产生的token数消耗
+**AfterChatDTO** 主要包含：
+- `conversationId`: 会话标识
+- `MainInfo`: 完整的对话数据
+
+**MainInfo 数据结构：**
 ```java
 package io.github.johntortoise.core.dto.model;
 
@@ -170,81 +223,78 @@ import java.util.List;
 @Builder
 public class MainInfo {
 
-    private List<Message> history;
+    private List<Message> history;    // 历史消息
 
-    private Message input;
+    private Message input;           // 用户输入
 
-    private Message outPut;
+    private Message outPut;          // AI输出
 
-    private Tokens tokens;
+    private Tokens tokens;           // Token消耗统计
 
 
     @Data
     public static class Tokens{
-        private Integer completionTokens = 0;
+        private Integer completionTokens;  // 输出Token
 
-        private Integer promptTokens = 0 ;
+        private Integer promptTokens;      // 输入Token
 
-        private Integer totalTokens = 0;
+        private Integer totalTokens;       // 总Token
 
-        private Integer cachedTokens = 0 ;
+        private Integer cachedTokens;      // 缓存Token
 
     }
 }
 
 ```
-在DefaultTortoiseChatManger中，直接将本次对话的内容，加入了map中
-在AdminTortoiseChatManger中，其调用的tortoise-admin中的方法，将会触发消息存储，成本记忆，记忆生成三大流程
+**不同实现的处理逻辑：**
+- **DefaultTortoiseChatManger**: 直接存储到内存Map中
+- **AdminTortoiseChatManger**: 触发消息存储、成本计算、记忆生成三大流程
 
 
-### 2.2 TortoiseMessageHandler
-TortoiseMessageHandler是消息处理拦截器接口，考虑到部分大模型的输出不是业内通用标准，因此将此接口开放出来，开发者可以自己处理大模型的输出消息
+#### 🔄 TortoiseMessageHandler - 消息处理拦截器
+
+处理不同大模型的输出格式差异：
+
+- **适用场景**: 不同LLM服务的响应格式不统一时使用
+- **扩展性**: 支持自定义消息解析逻辑
+- **默认实现**: `DefaultTortoiseMessageHandler` 提供基础功能
 ```java
-package io.github.johntortoise.core.message;
-
-import io.github.johntortoise.core.callback.StreamCallBack;
-import io.github.johntortoise.core.dto.model.MainInfo;
-import io.github.johntortoise.core.dto.model.Message;
-
-import java.util.List;
-
 public interface TortoiseMessageHandler<T> {
     /**
-     * 将大模型的输出结果，转为Java类
-     * @param resp llm给回的完整响应
-     * @return 目标java类
+     * 解析大模型响应为Java对象
+     * @param resp LLM的完整响应字符串
+     * @return 转换后的Java对象
      */
     T convertForResult(String resp);
 
     /**
-     * 整合本次聊天的数据
-     * @param history 历史对话数据
-     * @param input 输入
-     * @param resp 大模型的输出
-     * @param streamCallBack 流式调用回调函数
-     * @return mainInfo，将作为TortoiseChatManger的afterChat的一部分
+     * 整合对话数据用于后续处理
+     * @param history 历史消息列表
+     * @param input 用户输入消息
+     * @param resp 大模型原始响应
+     * @param streamCallBack 流式回调（可选）
+     * @return MainInfo对象，传递给TortoiseChatManger.afterChat()
      */
-    MainInfo convertForMainInfo(List<Message> history,Message input,String resp, StreamCallBack streamCallBack);
+    MainInfo convertForMainInfo(List<Message> history, Message input,
+                                String resp, StreamCallBack streamCallBack);
 }
 ```
 我们只为TortoiseMessageHandler提供给了一个基础的实现类DefaultTortoiseMessageHandler，这部分更多是在对输出做格式化，不再细讲
 
-## 3.Client
+## 🖥️ TortoiseClient - 核心客户端
 
-### 3.1
-TortoiseClient是核心的client，其将其他Client包含在内，使我们可以忽略具体的调用细节
+`TortoiseClient` 是框架的核心，封装了所有复杂的调用逻辑：
 
-其包含如下属性
-TortoiseChatManger，即2.1提到的聊天管理器
-TortoiseMessageHandler,即2.2提到的消息处理拦截器
-Model，即快速开始中定义的模型信息
-TortoiseAdminClient，即调用tortoise-admin的client，我们将所有与tortoise-admin的交互，都收缩到其中
+**核心组件：**
+- **TortoiseChatManger**: 聊天管理器
+- **TortoiseMessageHandler**: 消息处理拦截器
+- **Model**: 模型配置信息
+- **TortoiseAdminClient**: 管理后台客户端
 
-我们提供了几个方法，支持不同需求的调用，具体分成两种
+**支持的调用方式：**
 
-当使用TortoiseClient.create创建客户端时
+#### 📝 基础调用模式 (使用 `TortoiseClient.create`)
 ```java
-package io.github.johntortoise.demo.controller;
 import io.github.johntortoise.core.callback.StreamCallBack;
 import io.github.johntortoise.core.client.TortoiseClient;
 import io.github.johntortoise.core.dto.model.ChatCompletionResponse;
@@ -252,102 +302,103 @@ import io.github.johntortoise.core.dto.model.Model;
 import io.github.johntortoise.core.dto.sys.TortoiseMessage;
 import java.math.BigDecimal;
 
-public class Test {
+public class BasicUsageDemo {
 
-    private final static TortoiseClient<ChatCompletionResponse> tortoiseClient = TortoiseClient.cr(ChatCompletionResponse.class);
+    // 创建基础客户端
+    private final static TortoiseClient<ChatCompletionResponse> client =
+        TortoiseClient.create(ChatCompletionResponse.class);
 
     public static void main(String[] args) {
-        //定义模型信息
-        Model model = Model.builder().modelName("doubao-seed-1-6-lite-251015")
-                .apiKey("857299ff-3489-435a-8d1b-9aaad1c89d9b")
+        // 1. 配置模型
+        Model model = Model.builder()
+                .modelName("doubao-seed-1-6-lite-251015")
+                .apiKey("your-api-key")
                 .completeUrl("https://ark.cn-beijing.volces.com/api/v3/chat/completions")
                 .temperature(new BigDecimal("0.7"))
                 .build();
 
-        //定义会话ID，一个聊天窗口对应唯一的conversationId
-        String conversationId = "1";
+        String conversationId = "conv_001";
 
-        //定义第一条消息
-        TortoiseMessage firstMessage = new TortoiseMessage("你好,我叫王大力");
-        firstMessage.setConversationId(conversationId);
+        // 2. 非流式调用 - 一次性返回完整结果
+        TortoiseMessage message1 = new TortoiseMessage("你好，我叫王大力");
+        message1.setConversationId(conversationId);
+        ChatCompletionResponse response1 = client.chat(message1, model);
 
-        //非流式调用
-        tortoiseClient.chat(firstMessage, model);
+        // 3. 流式调用 - 实时输出结果
+        TortoiseMessage message2 = new TortoiseMessage("我叫什么名字？");
+        message2.setConversationId(conversationId);
 
-        //定义第二条消息
-        TortoiseMessage secondMessage = new TortoiseMessage("我叫什么名字，直接告诉我");
-        secondMessage.setConversationId(conversationId);
-
-        //流式调用
-        tortoiseClient.chatStream(secondMessage, model, new StreamCallBack() {
+        client.chatStream(message2, model, new StreamCallBack() {
             @Override
             public void send(String content) {
-                System.out.println(content);
+                System.out.print(content); // 实时输出
             }
+
             @Override
             public void finish() {
-
+                System.out.println("\n[流式输出完成]");
             }
+
             @Override
             public void onFailure() {
-
+                System.err.println("调用失败");
             }
         });
     }
 }
 ```
 
-当使用TortoiseClient.chatForAdmin创建客户端时(即接入tortoise-admin)
-**注意：下面的conversationId是通过tortoiseClient.createConversation创建的**
+#### 🔧 管理后台调用模式 (使用 `TortoiseClient.createForAdmin`)
+
+> 💡 **注意**: 此模式需要先部署 tortoise-admin 管理后台，会话ID通过 `createConversation()` 创建
 
 ```java
-package io.github.johntortoise.demo.controller;
-
 import io.github.johntortoise.core.callback.StreamCallBack;
 import io.github.johntortoise.core.client.TortoiseClient;
 import io.github.johntortoise.core.dto.model.ChatCompletionResponse;
 import io.github.johntortoise.core.dto.sys.TortoiseMessage;
 
-public class Test {
-    
-    public static String host = "http://localhost:8080";
-    public static String sk = "sk-428acddd-6ced-4e33-a9cb-ec96c980cf02";
+public class AdminUsageDemo {
 
-    private final static TortoiseClient<ChatCompletionResponse> tortoiseClient = TortoiseClient.createForAdmin(ChatCompletionResponse.class,host,sk);
+    // 管理后台地址和访问密钥
+    private static final String ADMIN_HOST = "http://localhost:8080";
+    private static final String ACCESS_KEY = "sk-xxxxxxxxxxxxxxxxx";
+
+    // 创建接入管理后台的客户端
+    private final static TortoiseClient<ChatCompletionResponse> client =
+        TortoiseClient.createForAdmin(ChatCompletionResponse.class, ADMIN_HOST, ACCESS_KEY);
 
     public static void main(String[] args) {
-        //通过client创建唯一的会话ID
-        String conversationId = tortoiseClient.createConversation("zgsssjznbdgj");
+        // 1. 通过管理后台创建会话
+        String conversationId = client.createConversation("自定义会话标识");
 
-        //定义第一条消息
-        TortoiseMessage firstMessage = new TortoiseMessage("你好,我叫王大力");
-        firstMessage.setConversationId(conversationId);
+        // 2. 非流式调用 - 无需手动传入模型配置
+        TortoiseMessage message1 = new TortoiseMessage("你好，我叫王大力");
+        message1.setConversationId(conversationId);
+        ChatCompletionResponse response1 = client.chatForAdmin(message1);
 
-        //非流式调用
-        tortoiseClient.chatForAdmin(firstMessage);
+        // 3. 流式调用
+        TortoiseMessage message2 = new TortoiseMessage("我叫什么名字？");
+        message2.setConversationId(conversationId);
 
-        //定义第二条消息
-        TortoiseMessage secondMessage = new TortoiseMessage("我叫什么名字，直接告诉我");
-        secondMessage.setConversationId(conversationId);
-
-        //流式调用
-        tortoiseClient.chatStreamForAdmin(secondMessage, new StreamCallBack() {
+        client.chatStreamForAdmin(message2, new StreamCallBack() {
             @Override
             public void send(String content) {
-                System.out.println(content);
+                System.out.print(content);
             }
+
             @Override
             public void finish() {
-
+                System.out.println("\n[管理后台流式输出完成]");
             }
+
             @Override
             public void onFailure() {
-
+                System.err.println("管理后台调用失败");
             }
         });
     }
 }
-
 ```
 
 ### 3.2 LLMApiClient
@@ -458,53 +509,78 @@ public class Test {
 ```
 
 
-### 3.3 TortoiseAdminClient
-如果不打算接入tortoise-admin，可以跳过此部分
+### 🔗 TortoiseAdminClient - 管理后台客户端
 
-由TortoiseClient直接使用的如下
-connect,触发时机,并调用tortoiseClient.checkConnection()
-createConversation，触发时机：通过 tortoiseClient.createConversation()
-findModel，触发时机：通过tortoiseClient.chatForAdmin()或者tortoiseClient.chatStreamForAdmin(),可以注意到这里不需要传入模型，因此将通过findModel找到sk绑定的模型
-afterChat，触发时机：tortoiseChatManger.afterChat()
-getMemoriesByConversationId,触发时机：tortoiseChatManger.findHistoryChat()
-checkLimit，触发时机：tortoiseChatManger.checkLimit()
+`TortoiseAdminClient` 封装了所有与管理后台的交互逻辑。如果不使用管理后台功能，可以跳过此部分。
 
-非TortoiseClient直接使用的如下
-receiveMessage，触发时机：此方法是开放给仅有记忆功能需求的开发，当调用此接口时，将会触发消息存储和生成记忆
-详见：（4.4）
+#### 📡 核心API方法
 
+**TortoiseClient 内部调用：**
 
-## 4管理台 
-我们提供了tortoise-admin模块，该模块是前后端一体的项目
-在运行该模块之前，需要先执行tortoise-admin模块的init目录下的init-ddl.sql和init-dml.sql文件
+| 方法 | 触发时机 | 说明 |
+|------|----------|------|
+| `connect` | `tortoiseClient.checkConnection()` | 连接测试 |
+| `createConversation` | `tortoiseClient.createConversation()` | 创建会话 |
+| `findModel` | `chatForAdmin()` / `chatStreamForAdmin()` | 获取SK绑定的模型配置 |
+| `afterChat` | `TortoiseChatManger.afterChat()` | 对话后处理（存储成本、生成记忆） |
+| `getMemoriesByConversationId` | `TortoiseChatManger.findHistoryChat()` | 获取会话记忆 |
+| `checkLimit` | `TortoiseChatManger.checkLimit()` | 检查Token使用限制 |
 
-执行成功后，修改application.properties文件中的Mysql配置
-spring.datasource.url
-spring.datasource.username
-spring.datasource.password
+**独立使用方法：**
 
-## 启动
-在启动之前，请先检查.env文件的配置
-通常你需要对这几项进行修改
-SPRING_DATASOURCE_HOST=192.168.3.11
-SPRING_DATASOURCE_PORT=3306
-SPRING_DATASOURCE_DATABASE=db_tortoise
-SPRING_DATASOURCE_USERNAME=root
-SPRING_DATASOURCE_PASSWORD=usiytvsiid5843
+| 方法 | 适用场景 | 说明 |
+|------|----------|------|
+| `receiveMessage` | 仅需要记忆功能 | 推送消息并触发记忆生成 |
+
+> 💡 **提示**: `receiveMessage` 方法详见 [6.2 触发记忆生成](#62-触发记忆生成)
 
 
-本地启动
+## 🖥️ 管理后台 (Tortoise Admin)
+
+完整的Web管理界面，提供可视化的配置管理、监控和运维功能。
+
+### 🗄️ 数据库初始化
+
+1. **执行初始化脚本**
+   ```bash
+   # 执行数据库表结构创建脚本
+   mysql -u root -p < tortoise-admin/init/init-ddl.sql
+
+   # 执行数据初始化脚本
+   mysql -u root -p < tortoise-admin/init/init-dml.sql
+   ```
+
+2. **配置数据库连接**
+   编辑 `tortoise-admin/.env`:
+   ```text
+    SPRING_DATASOURCE_HOST=192.168.3.11
+    SPRING_DATASOURCE_PORT=3306
+    SPRING_DATASOURCE_DATABASE=db_tortoise
+    SPRING_DATASOURCE_USERNAME=root
+    SPRING_DATASOURCE_PASSWORD=usiytvsiid5843
+    ```
+
+### 🚀 启动服务
+
+#### 本地启动
+```bash
 cd tortoise-admin
-start-app
+./start-app  # Windows使用 start-app.bat
 
-访问:http://localhost:8080/login
+# 访问管理后台
+open http://localhost:8080/login
+```
 
-docker启动
+#### Docker启动
+```bash
 cd tortoise-admin
 docker-compose up -d
-访问:http://ip:8080/login
 
-默认账号是admin@gmail.com，密码123456，如要修改，请查看init-dml.sql文件，或者在登录后，右上角点击个人信息即可输入密码修改
+# 访问管理后台
+open http://your-ip:8080/login
+```
+
+**默认账号**: `admin@gmail.com` / `123456`
 
 ### 4.1 大模型配置页面
 
@@ -568,7 +644,7 @@ docker-compose up -d
 
 ### 4.2 记忆策略
 
-在讲解具体配置前，需要明确一个核心的通识性问题：**记忆是与大模型进行连贯对话的基石。**
+在讲解具体配置前，需要明确一个核心的通识性问题：
 
 #### 记忆的本质是什么？
 
@@ -905,12 +981,13 @@ public class Test {
 }
 ```
 看一下对话过程
+
 ![历史会话页面](docs/img/conversation-5.png)
 
 
 从对话可以看到，最后一问的时候回答出了我们的名字，与截断不同
-
 再看当前的记忆
+
 ![历史会话页面](docs/img/conversation-6.png)
 
 可以看到一段总结，还有第五轮对话，因为第五轮对话还未生成记忆
@@ -982,9 +1059,9 @@ public class Test {
 ```
 
 看一下记忆
-![历史会话页面](docs/img/conversation-9.png)
+![历史会话页面](docs/img/conversation-8.png)
 
-## 6. 接入记忆功能
+## 6. 仅接入记忆功能
 
 > **前置要求**：请先按照 **4.3 章节** 完成相关配置。
 
@@ -1101,6 +1178,10 @@ public class Test {
         System.out.println(memory);
     }
 }
+```
+
+## 7 未来
+ 我们将不断优化我们的系统，为开源贡献自己的力量
 
 
 
