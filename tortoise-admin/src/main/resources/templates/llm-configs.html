@@ -1,0 +1,691 @@
+<div th:fragment="content">
+
+    <div class="px-4 py-6 sm:px-0">
+        <!-- Page Header -->
+        <div class="config-header relative">
+            <div class="relative z-10">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
+                            <i class="fas fa-cogs text-2xl"></i>
+                            大模型配置管理
+                        </h1>
+                        <p class="text-blue-100">管理和配置您的AI大模型服务</p>
+                    </div>
+                    <button id="add-config-btn" 
+                            class="mt-4 sm:mt-0 btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
+                        <i class="fas fa-plus mr-2"></i>
+                        新增配置
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Form -->
+        <div class="config-card search-card p-6 mb-6">
+            <h3 class="form-title">
+                <i class="fas fa-search text-blue-600"></i>
+                搜索配置
+            </h3>
+            <form id="search-form" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <label for="model-name-search" class="block text-sm font-semibold text-gray-700 mb-2">模型名称</label>
+                    <input type="text" id="model-name-search" name="modelName" 
+                           class="input-modern w-full"
+                           placeholder="请输入模型名称">
+                </div>
+                <div>
+                    <label for="config-name-search" class="block text-sm font-semibold text-gray-700 mb-2">配置名称</label>
+                    <input type="text" id="config-name-search" name="configName" 
+                           class="input-modern w-full"
+                           placeholder="请输入配置名称">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full btn-primary py-3 px-6 rounded-lg text-white font-medium shadow-lg">
+                        <i class="fas fa-search mr-2"></i>搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Config Table -->
+        <div class="config-card table-modern">
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">模型名称</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">配置名称</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">API URL</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">状态</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">描述</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="configs-table-body">
+                        <!-- Rows will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <p class="text-lg font-medium text-gray-600">加载中...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div id="configs-pagination-container" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <!-- Pagination will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Modal -->
+    <div id="config-modal" class="modal-modern hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content text-left overflow-hidden sm:max-w-2xl sm:w-full max-h-[90vh] flex flex-col">
+                <!-- Scrollable Content Area -->
+                <div class="flex-1 overflow-y-auto smooth-scroll">
+                    <div class="p-6">
+                        <form id="config-form" class="space-y-6">
+                        <input type="hidden" id="config-id" name="id">
+                        
+                        <!-- Basic Information Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-info-circle text-blue-600"></i>
+                                基本信息
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="model-name" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        模型名称 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="model-name" name="modelName" required
+                                           class="input-modern w-full"
+                                           placeholder="例如: GPT-4, Claude-3">
+                                </div>
+                                
+                                <div>
+                                    <label for="config-name" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        配置名称 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="config-name" name="configName" required
+                                           class="input-modern w-full"
+                                           placeholder="配置的显示名称">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- API Configuration Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-key text-blue-600"></i>
+                                API 配置
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="api-key" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        API 密钥 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="password" id="api-key" name="apiKey" required
+                                           class="input-modern w-full"
+                                           placeholder="请输入 API 密钥">
+                                </div>
+                                
+                                <div>
+                                    <label for="api-url" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        API URL <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="api-url" name="apiUrl" required
+                                           class="input-modern w-full"
+                                           placeholder="https://api.example.com/v1">
+                                </div>
+                                
+                                <div>
+                                    <label for="status" class="block text-sm font-semibold text-gray-700 mb-2">状态</label>
+                                    <select id="status" name="status"
+                                            class="input-modern w-full">
+                                        <option value="1">启用</option>
+                                        <option value="0">禁用</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="temperature" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        温度值
+                                    </label>
+                                    <div class="flex items-center space-x-4">
+                                        <input type="range" id="temperature-slider" name="temperatureSlider" min="0" max="2" step="0.1"
+                                               value="1.0" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider">
+                                        <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1"
+                                               value="1.0" class="w-20 input-modern text-center">
+                                    </div>
+<!--                                    <div class="flex justify-between text-xs text-gray-500 mt-1">-->
+<!--                                        <span>0.0</span>-->
+<!--                                        <span>2.0</span>-->
+<!--                                    </div>-->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pricing Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-dollar-sign text-blue-600"></i>
+                                价格配置
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="input-unit-price" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        输入价格 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" id="input-unit-price" name="inputUnitPrice" step="0.000001" required
+                                           class="input-modern w-full"
+                                           placeholder="0.000001">
+                                    <span class="text-xs text-gray-500 mt-1">每 token 价格</span>
+                                </div>
+                                
+                                <div>
+                                    <label for="output-unit-price" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        输出价格 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" id="output-unit-price" name="outputUnitPrice" step="0.000001" required
+                                           class="input-modern w-full"
+                                           placeholder="0.000001">
+                                    <span class="text-xs text-gray-500 mt-1">每 token 价格</span>
+                                </div>
+                                
+                                <div>
+                                    <label for="cache-price" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        缓存价格
+                                    </label>
+                                    <input type="number" id="cache-price" name="cachePrice" step="0.000001" value="0"
+                                           class="input-modern w-full"
+                                           placeholder="0">
+                                    <span class="text-xs text-gray-500 mt-1">每 token 价格</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Description Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-file-alt text-blue-600"></i>
+                                配置描述
+                            </div>
+                            <div>
+                                <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    描述信息 <span class="text-red-500">*</span>
+                                </label>
+                                <textarea id="description" name="description" rows="3" required
+                                          class="input-modern w-full"
+                                          placeholder="请描述此配置的用途和特点..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                </div>
+
+                <!-- Fixed Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse gap-3 flex-shrink-0 border-t border-gray-200">
+                    <button type="button" id="save-config-btn"
+                            class="btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
+                        保存配置
+                    </button>
+                    <button type="button" id="cancel-config-btn"
+                            class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
+                        <i class="fas fa-times mr-2"></i>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // State management
+
+            let currentSearch = {
+                modelName: '',
+                configName: ''
+            };
+            let isPageActive = false;
+            let currentPage = 1; // 分页当前页码
+            
+            // DOM Elements
+            const searchForm = document.getElementById('search-form');
+            const configsTableBody = document.getElementById('configs-table-body');
+            const configsPaginationContainer = document.getElementById('configs-pagination-container');
+            const addConfigBtn = document.getElementById('add-config-btn');
+            const configModal = document.getElementById('config-modal');
+            const configForm = document.getElementById('config-form');
+            const saveConfigBtn = document.getElementById('save-config-btn');
+            const cancelConfigBtn = document.getElementById('cancel-config-btn');
+            
+            // Event Listeners
+            searchForm.addEventListener('submit', handleSearch);
+            addConfigBtn.addEventListener('click', openAddModal);
+            saveConfigBtn.addEventListener('click', saveConfig);
+            cancelConfigBtn.addEventListener('click', closeConfigModal);
+
+            // 点击弹窗背景关闭弹窗
+            configModal.addEventListener('click', function(e) {
+                if (e.target === configModal) {
+                    closeConfigModal();
+                }
+            });
+
+            // ESC键关闭弹窗
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !configModal.classList.contains('hidden')) {
+                    closeConfigModal();
+                }
+            });
+
+            // 温度滑块和数字输入框的双向绑定
+            const temperatureSlider = document.getElementById('temperature-slider');
+            const temperatureInput = document.getElementById('temperature');
+
+            if (temperatureSlider && temperatureInput) {
+                // 滑块变化时更新数字输入框
+                temperatureSlider.addEventListener('input', function() {
+                    temperatureInput.value = this.value;
+                });
+
+                // 数字输入框变化时更新滑块
+                temperatureInput.addEventListener('input', function() {
+                    const value = parseFloat(this.value);
+                    if (!isNaN(value) && value >= 0 && value <= 2) {
+                        temperatureSlider.value = this.value;
+                    }
+                });
+
+                // 限制数字输入框的范围
+                temperatureInput.addEventListener('blur', function() {
+                    const value = parseFloat(this.value);
+                    if (isNaN(value) || value < 0) {
+                        this.value = '0';
+                        temperatureSlider.value = '0';
+                    } else if (value > 2) {
+                        this.value = '2';
+                        temperatureSlider.value = '2';
+                    }
+                });
+            }
+            
+            // Initialize page active state
+            isPageActive = document.getElementById('llm-configs-page').classList.contains('active-page');
+            
+            // Load initial data only if page is active
+            if (isPageActive) {
+                loadConfigs(1);
+            }
+            
+            // Handle page changes
+            document.addEventListener('pageChanged', function(e) {
+                if (e.detail === 'llm-configs') {
+                    // Only load if page wasn't already active
+                    if (!isPageActive) {
+                        isPageActive = true;
+                        loadConfigs();
+                    }
+                } else {
+                    isPageActive = false;
+                }
+            });
+            
+            // 使用全局的showToast和hideToast函数（在layout.html中定义）
+            
+            function handleSearch(e) {
+                e.preventDefault();
+                currentSearch.modelName = document.getElementById('model-name-search').value;
+                currentSearch.configName = document.getElementById('config-name-search').value;
+                currentPage = 1;
+                loadConfigs(1);
+            }
+            
+            function loadConfigs(page = 1) {
+                    const params = new URLSearchParams();
+                    params.append('page', page);
+                    params.append('size', 10); // 默认每页10条数据
+                    params.append('modelName', currentSearch.modelName);
+                    params.append('configName', currentSearch.configName);
+                    
+                    authenticatedFetch(`/api/llm-configs/page?${params}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            renderConfigsTable(data.records || []);
+                            renderConfigsPagination(data);
+                            currentPage = page;
+                        })
+                        .catch(error => {
+                            configsTableBody.innerHTML = `
+                                <tr>
+                                    <td colspan="7" class="px-6 py-8 text-center">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon text-red-500">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </div>
+                                            <p class="text-lg font-medium text-red-600">加载数据失败</p>
+                                            <p class="text-sm text-gray-500">请检查网络连接后重试</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                }
+                
+                function renderConfigsPagination(pageData) {
+                    const { current, pages, size, total } = pageData;
+                    const startItem = (current - 1) * size + 1;
+                    const endItem = Math.min(current * size, total);
+                    
+                    // 当没有数据时，显示第0到0条结果
+                    const displayStart = total > 0 ? startItem : 0;
+                    const displayEnd = total > 0 ? endItem : 0;
+                    
+                    // Simplified pagination with only Previous, Current (input) and Next buttons
+                    let paginationHtml = `
+                        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                            <div class="flex flex-1 justify-between sm:hidden">
+                                <button id="configs-mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    上一页
+                                </button>
+                                <button id="configs-mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    下一页
+                                </button>
+                            </div>
+                            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
+                                    </p>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="flex items-center">
+                                        <span class="text-sm text-gray-700 mr-2">第</span>
+                                        <input type="number" min="1" max="${pages}" value="${current}" 
+                                               class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                               id="configs-page-input">
+                                        <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
+                                        <button id="configs-page-go-btn" 
+                                                class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            跳转
+                                        </button>
+                                    </div>
+                                    <div class="flex space-x-2 ml-4">
+                                        <button id="configs-prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">上一页</span>
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <button id="configs-next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">下一页</span>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    configsPaginationContainer.innerHTML = paginationHtml;
+                    
+                    // Add event listeners after rendering
+                    setTimeout(() => {
+                        // Previous page buttons
+                        const prevBtn = document.getElementById('configs-prev-btn');
+                        const mobilePrevBtn = document.getElementById('configs-mobile-prev-btn');
+                        
+                        // Next page buttons
+                        const nextBtn = document.getElementById('configs-next-btn');
+                        const mobileNextBtn = document.getElementById('configs-mobile-next-btn');
+                        
+                        // Page input and go button
+                        const pageInput = document.getElementById('configs-page-input');
+                        const goBtn = document.getElementById('configs-page-go-btn');
+                        
+                        // Disable/enable buttons based on current page
+                        if (current <= 1) {
+                            if (prevBtn) {
+                                prevBtn.disabled = true;
+                                prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                            }
+                            if (mobilePrevBtn) {
+                                mobilePrevBtn.disabled = true;
+                                mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                            }
+                        } else {
+                            if (prevBtn) {
+                                prevBtn.disabled = false;
+                                prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                                prevBtn.onclick = () => {
+                                    loadConfigs(current - 1);
+                                };
+                            }
+                            if (mobilePrevBtn) {
+                                mobilePrevBtn.disabled = false;
+                                mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                                mobilePrevBtn.onclick = () => {
+                                    loadConfigs(current - 1);
+                                };
+                            }
+                        }
+                        
+                        if (current >= pages) {
+                            if (nextBtn) {
+                                nextBtn.disabled = true;
+                                nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                            }
+                            if (mobileNextBtn) {
+                                mobileNextBtn.disabled = true;
+                                mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                            }
+                        } else {
+                            if (nextBtn) {
+                                nextBtn.disabled = false;
+                                nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                                nextBtn.onclick = () => {
+                                    loadConfigs(current + 1);
+                                };
+                            }
+                            if (mobileNextBtn) {
+                                mobileNextBtn.disabled = false;
+                                mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                                mobileNextBtn.onclick = () => {
+                                    loadConfigs(current + 1);
+                                };
+                            }
+                        }
+                        
+                        // Page input and go button
+                        if (pageInput && goBtn) {
+                            goBtn.onclick = () => {
+                                const page = parseInt(pageInput.value);
+                                if (!isNaN(page) && page >= 1 && page <= pages) {
+                                    loadConfigs(page);
+                                } else {
+                                    showToast('请输入有效的页码', false);
+                                }
+                            };
+                            
+                            // Allow pressing Enter to go to the page
+                            pageInput.addEventListener('keypress', (e) => {
+                                if (e.key === 'Enter') {
+                                    goBtn.click();
+                                }
+                            });
+                        }
+                    }, 0);
+                }
+            
+            function renderConfigsTable(configs) {
+                if (!configs || configs.length === 0) {
+                    configsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-inbox"></i>
+                                    </div>
+                                    <p class="text-lg font-medium text-gray-600">暂无配置数据</p>
+                                    <p class="text-sm text-gray-500">点击"新增配置"创建您的第一个配置</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    // 不要清空分页容器，让renderPagination函数处理
+                    return;
+                }
+                
+                configsTableBody.innerHTML = configs.map(config => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">${config.id || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${config.modelName || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${config.configName || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <span class="inline-block max-w-xs truncate" title="${config.apiUrl || ''}">
+                                ${config.apiUrl || ''}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${config.status == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${config.status == 1 ? '启用' : '禁用'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <span class="inline-block max-w-xs truncate" title="${config.description || ''}">
+                                ${config.description || ''}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button onclick="editConfig(${config.id})" class="action-btn action-btn-edit">
+                                <i class="fas fa-edit"></i>
+                                编辑
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            
+            function openAddModal() {
+                // Reset form
+                configForm.reset();
+                document.getElementById('config-id').value = '';
+                // 设置默认温度值
+                document.getElementById('temperature').value = '1.0';
+                document.getElementById('temperature-slider').value = '1.0';
+                // 防止背景滚动
+                document.body.style.overflow = 'hidden';
+                configModal.classList.remove('hidden');
+                // 使用requestAnimationFrame确保DOM更新后再添加active类
+                requestAnimationFrame(() => {
+                    configModal.classList.add('active');
+                });
+            }
+            
+            function closeConfigModal() {
+                configModal.classList.remove('active');
+                // 等待动画完成后隐藏弹窗
+                setTimeout(() => {
+                    configModal.classList.add('hidden');
+                    // 恢复背景滚动
+                    document.body.style.overflow = '';
+                }, 300); // 与CSS transition时间匹配
+            }
+            
+            function saveConfig() {
+                const formData = new FormData(configForm);
+                const configData = {
+                    id: document.getElementById('config-id').value || null,
+                    modelName: document.getElementById('model-name').value,
+                    configName: document.getElementById('config-name').value,
+                    apiKey: document.getElementById('api-key').value,
+                    apiUrl: document.getElementById('api-url').value,
+                    status: parseInt(document.getElementById('status').value),
+                    inputUnitPrice: parseFloat(document.getElementById('input-unit-price').value) || 0,
+                    outputUnitPrice: parseFloat(document.getElementById('output-unit-price').value) || 0,
+                    cachePrice: parseFloat(document.getElementById('cache-price').value) || 0,
+                    temperature: parseFloat(document.getElementById('temperature').value) || 1.0,
+                    description: document.getElementById('description').value
+                };
+                
+                // 如果是编辑模式且ID为空，则删除ID字段
+                if (configData.id === null || configData.id === "") {
+                    delete configData.id;
+                }
+                
+                authenticatedFetch('/api/llm-configs/saveOrUpdateConfig', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // 先关闭弹窗
+                        configModal.classList.remove('active');
+                        setTimeout(() => {
+                            configModal.classList.add('hidden');
+                            // 恢复背景滚动
+                            document.body.style.overflow = '';
+                            // 重新加载数据
+                            loadConfigs();
+                            showToast('配置保存成功！', true, 1000);
+                        }, 300); // 与CSS transition时间匹配
+                    } else {
+                        throw new Error('保存失败');
+                    }
+                })
+                .catch(error => {
+                    showToast('保存失败，请稍后重试', false);
+                });
+            }
+            
+            // Make functions available globally for inline handlers
+            window.editConfig = function(id) {
+                authenticatedFetch(`/api/llm-configs/${id}`)
+                    .then(response => response.json())
+                    .then(config => {
+                        // 直接使用返回的配置对象，无需检查success字段
+                        document.getElementById('config-id').value = config.id || '';
+                        document.getElementById('model-name').value = config.modelName || '';
+                        document.getElementById('config-name').value = config.configName || '';
+                        document.getElementById('api-key').value = config.apiKey || '';
+                        document.getElementById('api-url').value = config.apiUrl || '';
+                        document.getElementById('status').value = config.status || '1';
+                        document.getElementById('input-unit-price').value = config.inputUnitPrice || '0';
+                        document.getElementById('output-unit-price').value = config.outputUnitPrice || '0';
+                        document.getElementById('cache-price').value = config.cachePrice || '0';
+                        const temperatureValue = config.temperature ? parseFloat(config.temperature).toFixed(1) : '1.0';
+                        document.getElementById('temperature').value = temperatureValue;
+                        document.getElementById('temperature-slider').value = temperatureValue;
+                        document.getElementById('description').value = config.description || '';
+
+                        // 防止背景滚动
+                        document.body.style.overflow = 'hidden';
+                        configModal.classList.remove('hidden');
+                        // 使用requestAnimationFrame确保DOM更新后再添加active类
+                        requestAnimationFrame(() => {
+                            configModal.classList.add('active');
+                        });
+                    })
+                    .catch(error => {
+                        showToast('加载配置信息失败，请稍后重试', false);
+                    });
+            };
+            
+            window.loadConfigs = loadConfigs;
+        });
+    </script>
+</div>

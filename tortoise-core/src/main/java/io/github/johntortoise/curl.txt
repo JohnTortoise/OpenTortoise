@@ -1,0 +1,5 @@
+curl --location 'localhost:7080/createConversation?customerId=314141'
+
+curl --location 'localhost:7080/chat?conversationId=259233925757976576&msg=%E4%BD%A0%E5%A5%BD'
+
+curl --location 'localhost:7080/chatForAdmin?conversationId=259233925757976576&msg=%E4%BD%A0%E5%A5%BD'

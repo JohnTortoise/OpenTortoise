@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content">
+    <div class="px-4 py-6 sm:px-0">
+        <!-- Page Header -->
+        <div class="memory-header relative">
+            <div class="relative z-10">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
+                            <i class="fas fa-brain text-2xl"></i>
+                            记忆策略管理
+                        </h1>
+                        <p class="text-purple-100">配置和管理AI的记忆策略，提升对话连续性</p>
+                    </div>
+                    <div class="flex gap-3 mt-4 sm:mt-0">
+                        <button onclick="openAddModalToMemoryStrategy()" 
+                                class="btn-memory-primary">
+                            <i class="fas fa-plus"></i>
+                            新增策略
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Form -->
+        <div class="config-card search-card p-6 mb-6">
+            <h3 class="form-title">
+                <i class="fas fa-search text-blue-600"></i>
+                搜索策略
+            </h3>
+            <form id="strategy-search-form" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="sm:col-span-2">
+                    <label for="policy-name-search" class="block text-sm font-semibold text-gray-700 mb-2">策略名称</label>
+                    <input type="text" id="policy-name-search" name="policyName" 
+                           class="input-modern w-full"
+                           placeholder="请输入策略名称">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full btn-primary py-3 px-6 rounded-lg text-white font-medium shadow-lg">
+                        <i class="fas fa-search mr-2"></i>
+                        搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Strategy Table -->
+        <div class="config-card table-modern">
+            <div class="overflow-x-auto hide-scrollbar">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">策略名称</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">模型名称</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">模型配置ID</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="strategies-table-body">
+                        <!-- Data will be loaded here -->
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <p class="text-lg font-medium text-gray-600">加载中...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    </table>
+                    
+                    <!-- 分页容器 -->
+                    <div id="strategies-pagination-container" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                        <!-- 分页组件将在这里动态渲染 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Strategy Detail Modal -->
+    <div id="strategy-detail-modal" class="modal-modern hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content text-left overflow-hidden sm:max-w-4xl sm:w-full max-h-[90vh] flex flex-col">
+                <!-- Scrollable Content Area -->
+                <div class="flex-1 overflow-y-auto smooth-scroll">
+                    <div class="px-6">
+                    <form id="detail-form" class="space-y-6">
+                        <input type="hidden" id="detail-strategy-id">
+
+                        <!-- Basic Information Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-info-circle text-blue-600"></i>
+                                基本信息
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="detail-policy-name" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        策略名称
+                                    </label>
+                                    <input type="text" id="detail-policy-name" readonly
+                                           class="input-modern w-full"
+                                           placeholder="策略名称">
+                                </div>
+
+                                <div>
+                                    <label for="detail-llm-config" class="block text-sm font-medium text-gray-700">
+                                        LLM配置
+                                    </label>
+                                    <div class="relative mt-1">
+                                        <input type="text" id="detail-llm-config" readonly
+                                               placeholder="LLM配置" 
+                                               class="input-modern w-full">
+                                    </div>
+                                    <input type="hidden" id="detail-llm-model-config" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Memory Configuration Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-cogs text-blue-600"></i>
+                                记忆基础配置
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="detail-memory-type" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        记忆策略类型
+                                    </label>
+                                    <input type="text" id="detail-memory-type" readonly
+                                           class="input-modern w-full"
+                                           placeholder="记忆策略类型">
+                                </div>
+
+                                <div>
+                                    <label for="detail-threshold" class="block text-sm font-medium text-gray-700">
+                                        记忆阈值(达到此值时触发记忆)
+                                    </label>
+                                    <input type="number" id="detail-threshold" readonly min="0" step="1"
+                                           class="input-modern w-full mt-1"
+                                           placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                                <div>
+                                    <label for="detail-batch-analysis-size" class="block text-sm font-medium text-gray-700">
+                                        记忆单次分析消息数量
+                                    </label>
+                                    <input type="number" id="detail-batch-analysis-size" readonly min="1"
+                                           class="input-modern w-full mt-1"
+                                           placeholder="10">
+                                </div>
+
+                                <div>
+                                    <label for="detail-max-length" class="block text-sm font-medium text-gray-700">
+                                        记忆最大长度(记忆长度超过此值时会触发精简)
+                                    </label>
+                                    <input type="number" id="detail-max-length" readonly min="0"
+                                           class="input-modern w-full mt-1"
+                                           placeholder="1000">
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <label for="detail-base-prompt" class="block text-sm font-medium text-gray-700">
+                                    基础提示词(非必填)
+                                </label>
+                                <textarea id="detail-base-prompt" readonly rows="3"
+                                          class="input-modern w-full mt-1"
+                                          placeholder="基础提示词..."></textarea>
+                            </div>
+
+                            <div class="mt-4">
+                                <label for="detail-over-length-prompt" class="block text-sm font-medium text-gray-700">
+                                    超长提示词(非必填)
+                                </label>
+                                <textarea id="detail-over-length-prompt" readonly rows="2"
+                                          class="input-modern w-full mt-1"
+                                          placeholder="超长提示词..."></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                                <div>
+                                    <label for="detail-with-history" class="block text-sm font-medium text-gray-700">
+                                        是否利用历史记忆(可以减少分析成本)
+                                    </label>
+                                    <select id="detail-with-history" readonly class="input-modern w-full mt-1">
+                                        <option value="true">是</option>
+                                        <option value="false">否</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="detail-update-prompt" class="block text-sm font-medium text-gray-700">
+                                        更新提示词(非必填)
+                                    </label>
+                                    <textarea id="detail-update-prompt" readonly rows="2"
+                                              class="input-modern w-full mt-1"
+                                              placeholder="更新提示词..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Fixed Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse gap-3 flex-shrink-0 border-t border-gray-200">
+                    <button type="button" onclick="closeStrategyDetailModal()"
+                            class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
+                        <i class="fas fa-times mr-2"></i>
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Strategy Modal -->
+    <div id="strategy-modal" class="modal-modern hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content text-left overflow-hidden sm:max-w-4xl sm:w-full max-h-[90vh] flex flex-col">
+                <!-- Scrollable Content Area -->
+                <div class="flex-1 overflow-y-auto smooth-scroll">
+                    <div class="px-6">
+                        <form id="strategy-form" class="space-y-6">
+                        <input type="hidden" id="strategy-id">
+
+                        <!-- Basic Information Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-info-circle text-blue-600"></i>
+                                基本信息
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="policy-name" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        策略名称 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="policy-name" name="policyName" required
+                                           class="input-modern w-full"
+                                           placeholder="请输入策略名称">
+                                </div>
+
+                                <div>
+                                    <label for="llm-model-config-search" class="block text-sm font-medium text-gray-700">
+                                        LLM配置 <span class="required-star">*</span>
+                                    </label>
+                                    <div class="relative mt-1">
+                                        <input type="text" id="llm-model-config-search" 
+                                               placeholder="输入配置名称搜索..." 
+                                               class="input-modern w-full">
+        <div id="llm-config-dropdown"
+             class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-60 rounded-lg py-2 text-sm border border-gray-200 overflow-auto focus:outline-none hidden"
+             style="box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);">
+            <!-- 搜索结果将动态加载到这里 -->
+        </div>
+                                    </div>
+                                    <input type="hidden" id="llm-model-config" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Memory Configuration Section -->
+                        <div class="form-section">
+                            <div class="form-title">
+                                <i class="fas fa-cogs text-blue-600"></i>
+                                记忆基础配置
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="memory-type" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        记忆策略类型 <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="memory-type" name="memoryType" required
+                                            class="input-modern w-full">
+                                        <option value="1">截断</option>
+                                        <option value="2">摘要</option>
+                                        <option value="3">时序图谱</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="threshold" class="block text-sm font-medium text-gray-700">
+                                        记忆阈值(达到此值时触发记忆) <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" id="threshold" min="0" step="1" required
+                                           class="input-modern w-full mt-1"
+                                           placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                                <div>
+                                    <label for="batch-analysis-size" class="block text-sm font-medium text-gray-700">
+                                        记忆单次分析消息数量 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" id="batch-analysis-size" min="1" required
+                                           class="input-modern w-full mt-1"
+                                           placeholder="10">
+                                </div>
+
+                                <div>
+                                    <label for="max-length" class="block text-sm font-medium text-gray-700">
+                                        记忆最大长度(记忆长度超过此值时会触发精简)<span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" id="max-length" min="0"
+                                           class="input-modern w-full mt-1"
+                                           placeholder="1000">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                                <div>
+                                    <label for="with-history" class="block text-sm font-medium text-gray-700">
+                                        是否利用历史记忆(可以减少分析成本)<span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="with-history" class="input-modern w-full mt-1">
+                                        <option value="true">是</option>
+                                        <option value="false">否</option>
+                                    </select>
+                                </div>
+
+                                <div class="hidden">
+                                    <!-- Placeholder for grid layout -->
+                                </div>
+                            </div>
+
+                            <!-- Custom Prompt Toggle -->
+                            <div class="mt-4">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="custom-prompt-toggle" class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2">
+                                    <span class="ml-2 text-sm font-medium text-gray-700">自定义提示词</span>
+                                </label>
+                            </div>
+
+                            <!-- Custom Prompt Fields (Hidden by default) -->
+                            <div id="custom-prompt-fields" class="hidden">
+                                <div class="mt-4">
+                                    <label for="base-prompt" class="block text-sm font-medium text-gray-700">
+                                        基础提示词(非必填)
+                                    </label>
+                                    <textarea id="base-prompt" rows="3"
+                                              class="input-modern w-full mt-1"
+                                              placeholder="请输入基础提示词..."></textarea>
+                                </div>
+
+                                <div class="mt-4">
+                                    <label for="over-length-prompt" class="block text-sm font-medium text-gray-700">
+                                        超长提示词(非必填)
+                                    </label>
+                                    <textarea id="over-length-prompt" rows="2"
+                                              class="input-modern w-full mt-1"
+                                              placeholder="请输入超长提示词..."></textarea>
+                                </div>
+
+                                <div class="mt-4">
+                                    <label for="update-prompt" class="block text-sm font-medium text-gray-700">
+                                        更新提示词(非必填)
+                                    </label>
+                                    <textarea id="update-prompt" rows="2"
+                                              class="input-modern w-full mt-1"
+                                              placeholder="请输入更新提示词..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Fixed Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse gap-3 flex-shrink-0 border-t border-gray-200">
+                    <button type="button" onclick="saveStrategy()"
+                            class="btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
+                        保存策略
+                    </button>
+                    <button type="button" onclick="closeStrategyModal()"
+                            class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
+                        <i class="fas fa-times mr-2"></i>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // State management
+
+            let currentSearch = {
+                policyName: ''
+            };
+            let isPageActive = false;
+            
+            // 分页相关变量
+            let currentPage = 1;
+            
+            // DOM Elements
+            const searchForm = document.getElementById('strategy-search-form');
+            const strategiesTableBody = document.getElementById('strategies-table-body');
+            const paginationContainer = document.getElementById('strategies-pagination-container');
+            const strategyForm = document.getElementById('strategy-form');
+            const strategyModal = document.getElementById('strategy-modal');
+
+            // Event Listeners
+            searchForm.addEventListener('submit', handleSearch);
+            strategyForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveStrategy();
+            });
+
+            // 点击弹窗背景关闭弹窗
+            strategyModal.addEventListener('click', function(e) {
+                if (e.target === strategyModal) {
+                    closeStrategyModal();
+                }
+            });
+
+            // 点击详情弹窗背景关闭弹窗
+            const detailModal = document.getElementById('strategy-detail-modal');
+            detailModal.addEventListener('click', function(e) {
+                if (e.target === detailModal) {
+                    closeStrategyDetailModal();
+                }
+            });
+
+            // ESC键关闭弹窗
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (!strategyModal.classList.contains('hidden')) {
+                        closeStrategyModal();
+                    } else if (!detailModal.classList.contains('hidden')) {
+                        closeStrategyDetailModal();
+                    }
+                }
+            });
+
+            // Memory type change functionality
+            const memoryTypeSelect = document.getElementById('memory-type');
+            const batchAnalysisSizeField = document.getElementById('batch-analysis-size').closest('.grid.grid-cols-1.gap-4.sm\\:grid-cols-2');
+            const withHistoryField = document.getElementById('with-history').closest('.grid.grid-cols-1.gap-4.sm\\:grid-cols-2');
+            const customPromptToggleField = document.getElementById('custom-prompt-toggle').closest('.mt-4');
+            const customPromptFields = document.getElementById('custom-prompt-fields');
+            const llmConfigField = document.getElementById('llm-model-config-search').parentElement.parentElement;
+            const thresholdLabel = document.querySelector('label[for="threshold"]');
+            const detailThresholdLabel = document.querySelector('label[for="detail-threshold"]');
+
+            function toggleFieldsBasedOnMemoryType(memoryType) {
+                if (memoryType === '1') { // 截断类型
+                    // 隐藏需要隐藏的字段
+                    batchAnalysisSizeField.classList.add('hidden');
+                    withHistoryField.classList.add('hidden');
+                    customPromptToggleField.classList.add('hidden');
+                    customPromptFields.classList.add('hidden');
+                    llmConfigField.classList.add('hidden');
+
+                    // 修改记忆阈值标签文本
+                    if (thresholdLabel) {
+                        thresholdLabel.innerHTML = '最近消息轮数(一问一答) <span class="text-red-500">*</span>';
+                    }
+
+                    // 清空隐藏字段的值
+                    document.getElementById('batch-analysis-size').value = '';
+                    document.getElementById('with-history').value = 'false';
+                    document.getElementById('custom-prompt-toggle').checked = false;
+                    document.getElementById('base-prompt').value = '';
+                    document.getElementById('over-length-prompt').value = '';
+                    document.getElementById('update-prompt').value = '';
+                    document.getElementById('llm-model-config-search').value = '';
+                    document.getElementById('llm-model-config').value = '';
+                } else {
+                    // 显示所有字段
+                    batchAnalysisSizeField.classList.remove('hidden');
+                    withHistoryField.classList.remove('hidden');
+                    customPromptToggleField.classList.remove('hidden');
+                    llmConfigField.classList.remove('hidden');
+
+                    // 恢复记忆阈值标签文本
+                    if (thresholdLabel) {
+                        thresholdLabel.innerHTML = '记忆阈值(达到此值时触发记忆) <span class="text-red-500">*</span>';
+                    }
+
+                    // customPromptFields 根据toggle状态决定是否显示
+                    if (document.getElementById('custom-prompt-toggle').checked) {
+                        customPromptFields.classList.remove('hidden');
+                    }
+                }
+            }
+
+            memoryTypeSelect.addEventListener('change', function() {
+                toggleFieldsBasedOnMemoryType(this.value);
+            });
+
+            // 初始化时根据当前选择的状态
+            toggleFieldsBasedOnMemoryType(memoryTypeSelect.value);
+
+            // Custom prompt toggle functionality
+            const customPromptToggle = document.getElementById('custom-prompt-toggle');
+
+            customPromptToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    customPromptFields.classList.remove('hidden');
+                } else {
+                    customPromptFields.classList.add('hidden');
+                    // Clear the prompt fields when hiding
+                    document.getElementById('base-prompt').value = '';
+                    document.getElementById('over-length-prompt').value = '';
+                    document.getElementById('update-prompt').value = '';
+                }
+            });
+
+            // Initialize page active state
+            isPageActive = document.getElementById('memory-strategy-page').classList.contains('active-page');
+
+            // Load initial data only if page is active
+            if (isPageActive) {
+                loadStrategies(1); // 加载第一页数据
+                loadLLMConfigs(); // 进入页面时调用一次模糊搜索接口
+                setupLLMConfigSearch(); // 设置搜索功能
+            }
+
+            // Handle page changes
+            document.addEventListener('pageChanged', function(e) {
+                if (e.detail === 'memory-strategy') {
+                    // Only load if page wasn't already active
+                    if (!isPageActive) {
+                        isPageActive = true;
+                        loadStrategies();
+                    }
+                } else {
+                    isPageActive = false;
+                }
+            });
+
+            // 使用全局的showToast和hideToast函数（在layout.html中定义）
+
+            // Helper function to convert memory type to text
+            function getMemoryTypeText(type) {
+                const typeMap = {
+                    1: '截断',
+                    2: '摘要',
+                    3: '时序图谱'
+                };
+                return typeMap[type] || '未知类型';
+            }
+
+            // Functions
+            function handleSearch(e) {
+                e.preventDefault();
+                currentSearch.policyName = document.getElementById('policy-name-search').value;
+                loadStrategies();
+            }
+
+            function loadStrategies(page = 1) {
+                const params = new URLSearchParams();
+                params.append('page', page);
+                params.append('size', 10); // 默认每页10条数据
+                params.append('name', currentSearch.policyName); // 保持使用policyName以匹配当前代码
+                
+                authenticatedFetch(`/api/policy/page?${params}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderStrategiesTable(data.records || []);
+                        renderStrategiesPagination(data);
+                        currentPage = page;
+                    })
+                    .catch(error => {
+                        strategiesTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-sm text-red-500">
+                                    加载数据失败，请稍后重试
+                                </td>
+                            </tr>
+                        `;
+                    });
+            }
+            
+            function renderStrategiesPagination(pageData) {
+                const { current, pages, size, total } = pageData;
+                const startItem = (current - 1) * size + 1;
+                const endItem = Math.min(current * size, total);
+                
+                // 当没有数据时，显示第0到0条结果
+                const displayStart = total > 0 ? startItem : 0;
+                const displayEnd = total > 0 ? endItem : 0;
+                
+                let paginationHtml = `
+                    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                        <div class="flex flex-1 justify-between sm:hidden">
+                            <button id="strategies-mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                上一页
+                            </button>
+                            <button id="strategies-mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                下一页
+                            </button>
+                        </div>
+                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
+                                </p>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-700 mr-2">第</span>
+                                    <input type="number" min="1" max="${pages}" value="${current}" 
+                                           class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                           id="strategies-page-input">
+                                    <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
+                                    <button id="strategies-page-go-btn" 
+                                            class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        跳转
+                                    </button>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button id="strategies-prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button id="strategies-next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                paginationContainer.innerHTML = paginationHtml;
+                
+                // Add event listeners after rendering
+                setTimeout(() => {
+                    // Previous page buttons
+                    const prevBtn = document.getElementById('strategies-prev-btn');
+                    const mobilePrevBtn = document.getElementById('strategies-mobile-prev-btn');
+                    
+                    // Next page buttons
+                    const nextBtn = document.getElementById('strategies-next-btn');
+                    const mobileNextBtn = document.getElementById('strategies-mobile-next-btn');
+                    
+                    // Page input and go button
+                    const pageInput = document.getElementById('strategies-page-input');
+                    const goBtn = document.getElementById('strategies-page-go-btn');
+                    
+                    // Disable/enable buttons based on current page
+                    if (current <= 1) {
+                        if (prevBtn) {
+                            prevBtn.disabled = true;
+                            prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        }
+                        if (mobilePrevBtn) {
+                            mobilePrevBtn.disabled = true;
+                            mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        }
+                    } else {
+                        if (prevBtn) {
+                            prevBtn.disabled = false;
+                            prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            prevBtn.onclick = () => {
+                                loadStrategies(current - 1);
+                            };
+                        }
+                        if (mobilePrevBtn) {
+                            mobilePrevBtn.disabled = false;
+                            mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobilePrevBtn.onclick = () => {
+                                loadStrategies(current - 1);
+                            };
+                        }
+                    }
+                    
+                    if (current >= pages) {
+                        if (nextBtn) {
+                            nextBtn.disabled = true;
+                            nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        }
+                        if (mobileNextBtn) {
+                            mobileNextBtn.disabled = true;
+                            mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        }
+                    } else {
+                        if (nextBtn) {
+                            nextBtn.disabled = false;
+                            nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            nextBtn.onclick = () => {
+                                loadStrategies(current + 1);
+                            };
+                        }
+                        if (mobileNextBtn) {
+                            mobileNextBtn.disabled = false;
+                            mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobileNextBtn.onclick = () => {
+                                loadStrategies(current + 1);
+                            };
+                        }
+                    }
+                    
+                    // Page input and go button
+                    if (pageInput && goBtn) {
+                        goBtn.onclick = () => {
+                            const page = parseInt(pageInput.value);
+                            if (!isNaN(page) && page >= 1 && page <= pages) {
+                                loadStrategies(page);
+                            } else {
+                                showToast('请输入有效的页码', false);
+                            }
+                        };
+                        
+                        // Allow pressing Enter to go to the page
+                        pageInput.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') {
+                                goBtn.click();
+                            }
+                        });
+                    }
+                }, 0);
+            }
+
+            function renderStrategiesTable(strategies) {
+                if (!strategies || strategies.length === 0) {
+                    strategiesTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-database text-gray-300"></i>
+                                    </div>
+                                    <p class="text-lg font-medium text-gray-600">暂无数据</p>
+                                    <p class="text-sm text-gray-500 mt-1">还没有任何记忆策略，点击上方按钮新增</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    // 不要清空分页容器，让renderPagination函数处理
+                    return;
+                }
+
+                strategiesTableBody.innerHTML = strategies.map(strategy => `
+                    <tr class="table-hover-row">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${strategy.id || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${strategy.name || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${strategy.modelName || '无模型'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                ${strategy.llmModelConfig || ''}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="editStrategy(${strategy.id})" class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-edit mr-1"></i> 编辑
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+
+
+            function openAddModalToMemoryStrategy() {
+                // Reset form
+                strategyForm.reset();
+                document.getElementById('strategy-id').value = '';
+                document.getElementById('llm-model-config-search').value = ''; // 清空搜索框
+                document.getElementById('llm-model-config').value = ''; // 清空隐藏的配置ID
+                document.getElementById('llm-config-dropdown').classList.add('hidden'); // 隐藏下拉框
+
+                // Reset custom prompt toggle
+                document.getElementById('custom-prompt-toggle').checked = false;
+                document.getElementById('custom-prompt-fields').classList.add('hidden');
+
+
+                // 确保搜索功能在模态框打开时重新初始化
+                setTimeout(() => {
+                    setupLLMConfigSearch();
+                }, 0);
+
+                // 防止背景滚动
+                document.body.style.overflow = 'hidden';
+
+                // 显示弹窗
+                strategyModal.classList.remove('hidden');
+                // 使用requestAnimationFrame确保DOM更新后再添加active类
+                requestAnimationFrame(() => {
+                    strategyModal.classList.add('active');
+                });
+            }
+
+            function closeStrategyModal() {
+                strategyModal.classList.remove('active');
+                // 等待动画完成后隐藏弹窗
+                setTimeout(() => {
+                    strategyModal.classList.add('hidden');
+                    // 恢复背景滚动
+                    document.body.style.overflow = '';
+                    // 触发一个自定义事件，以便其他组件可以监听模态框关闭事件
+                    const event = new CustomEvent('strategyModalClosed');
+                    document.dispatchEvent(event);
+                }, 300); // 与CSS transition时间匹配
+            }
+
+            function saveStrategy() {
+                // 构建MemoryBase对象
+                const memoryBase = {
+                    type: parseInt(document.getElementById('memory-type').value) || 1,
+                    threshold: parseInt(document.getElementById('threshold').value) || 0,
+                    batchAnalysisSize: parseInt(document.getElementById('batch-analysis-size').value) || 0,
+                    withHistory: document.getElementById('with-history').value === 'true',
+                    maxLength: parseInt(document.getElementById('max-length').value) || null,
+                    basePrompt: document.getElementById('base-prompt').value,
+                    overLengthPrompt: document.getElementById('over-length-prompt').value,
+                    updatePrompt: document.getElementById('update-prompt').value
+                };
+
+                // 构建策略对象
+                const strategyData = {
+                    id: document.getElementById('strategy-id').value || null,
+                    name: document.getElementById('policy-name').value,
+                    modelName: "default", // 默认模型名称
+                    llmModelConfigId: document.getElementById('llm-model-config').value,
+                    memoryBase: memoryBase
+                };
+
+                // 如果是编辑模式且ID为空，则删除ID字段
+                if (strategyData.id === null || strategyData.id === "") {
+                    delete strategyData.id;
+                }
+
+                authenticatedFetch('/api/policy/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(strategyData)
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            // 先关闭弹窗
+                            strategyModal.classList.remove('active');
+                            setTimeout(() => {
+                                strategyModal.classList.add('hidden');
+                                // 恢复背景滚动
+                                document.body.style.overflow = '';
+                                // 重新加载数据
+                                loadStrategies();
+                                showToast('保存成功', true, 1000);
+                            }, 300); // 与CSS transition时间匹配
+                        } else {
+                            // 尝试解析错误响应
+                            return response.text().then(text => {
+                                try {
+                                    const errorData = JSON.parse(text);
+                                    const errorMessage = errorData.message || '保存失败';
+                                    throw new Error(errorMessage);
+                                } catch (parseError) {
+                                    // 如果不是有效的JSON，使用响应文本作为错误消息
+                                    const errorMessage = text || '保存失败，请稍后重试';
+                                    throw new Error(errorMessage);
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.log("erormmi"+error.message)
+                        showToast(error.message, false);
+                    });
+            }
+
+            function editStrategy(id) {
+                authenticatedFetch(`/api/policy/detail?id=${id}`)
+                    .then(response => response.json())
+                    .then(strategy => {
+                        // 填充表单数据
+                        document.getElementById('strategy-id').value = strategy.id || '';
+                        document.getElementById('policy-name').value = strategy.name || '';
+                        document.getElementById('llm-model-config').value = strategy.llmModelConfigId || '';
+                        
+                        // 获取配置名称并显示在搜索框中
+                        if (strategy.llmModelConfigId) {
+                            // 加载LLM配置列表并自动选择当前配置
+                            loadLLMConfigs('', function(configs) {
+                                // 如果没有找到匹配的配置，保持显示ID
+                                const matchedConfig = configs.find(config => String(config.id) === String(strategy.llmModelConfigId));
+                                if (matchedConfig) {
+                                    document.getElementById('llm-model-config-search').value = matchedConfig.configName || matchedConfig.name || '未知配置';
+                                } else {
+                                    document.getElementById('llm-model-config-search').value = strategy.llmModelConfigId;
+                                }
+                                // 隐藏下拉框，只在用户主动输入或点击时显示
+                                document.getElementById('llm-config-dropdown').classList.add('hidden');
+                            });
+                        } else {
+                            document.getElementById('llm-model-config-search').value = '';
+                        }
+
+                        // 填充MemoryBase数据
+                        if (strategy.memoryBase) {
+                            document.getElementById('memory-type').value = strategy.memoryBase.type !== undefined ? strategy.memoryBase.type : '1';
+                            document.getElementById('threshold').value = strategy.memoryBase.threshold !== undefined ? strategy.memoryBase.threshold : '';
+                            document.getElementById('batch-analysis-size').value = strategy.memoryBase.batchAnalysisSize || '';
+                            document.getElementById('max-length').value = strategy.memoryBase.maxLength || '';
+                            document.getElementById('base-prompt').value = strategy.memoryBase.basePrompt || '';
+                            document.getElementById('over-length-prompt').value = strategy.memoryBase.overLengthPrompt || '';
+                            document.getElementById('with-history').value = strategy.memoryBase.withHistory ? 'true' : 'false';
+                            document.getElementById('update-prompt').value = strategy.memoryBase.updatePrompt || '';
+
+                            // Check if any prompt fields have content and show custom prompt section
+                            const hasCustomPrompts = (strategy.memoryBase.basePrompt || strategy.memoryBase.overLengthPrompt || strategy.memoryBase.updatePrompt);
+                            const customPromptToggle = document.getElementById('custom-prompt-toggle');
+                            const customPromptFields = document.getElementById('custom-prompt-fields');
+
+                            if (hasCustomPrompts) {
+                                customPromptToggle.checked = true;
+                                customPromptFields.classList.remove('hidden');
+                            } else {
+                                customPromptToggle.checked = false;
+                                customPromptFields.classList.add('hidden');
+                            }
+                        }
+
+
+                        // 根据记忆类型更新字段显示状态和标签
+                        toggleFieldsBasedOnMemoryType(document.getElementById('memory-type').value);
+
+                        // 确保搜索功能在模态框打开时重新初始化
+                        setTimeout(() => {
+                            setupLLMConfigSearch();
+                        }, 0);
+
+                        // 防止背景滚动
+                        document.body.style.overflow = 'hidden';
+
+                        // 显示弹窗
+                        strategyModal.classList.remove('hidden');
+                        // 使用requestAnimationFrame确保DOM更新后再添加active类
+                        requestAnimationFrame(() => {
+                            strategyModal.classList.add('active');
+                        });
+                    })
+                    .catch(error => {
+                        showToast('加载策略信息失败，请稍后重试', false);
+                    });
+            }
+
+            // 刷新页面函数
+            window.refreshPage = function() {
+                loadStrategies();
+            };
+
+            // Load LLM configs for dropdown with search functionality
+            function loadLLMConfigs(searchKeyword = '', callback = null) {
+                const params = new URLSearchParams();
+                // 总是传入keyword参数，即使为空字符串
+                params.append('keyword', searchKeyword);
+                
+                authenticatedFetch(`/api/chatProfile/searchModel?${params}`)
+                    .then(response => response.json())
+                    .then(configs => {
+                        const dropdownElement = document.getElementById('llm-config-dropdown');
+                        const searchInput = document.getElementById('llm-model-config-search');
+                        const currentConfigId = document.getElementById('llm-model-config').value;
+                        
+                        // Clear existing options
+                        dropdownElement.innerHTML = '';
+                        
+                        if (configs.length === 0) {
+                            const noResultItem = document.createElement('div');
+                            noResultItem.className = 'search-dropdown-item cursor-default text-gray-500';
+                            noResultItem.textContent = '未找到匹配的配置';
+                            dropdownElement.appendChild(noResultItem);
+                        } else {
+                            // Add config options
+                            configs.forEach(config => {
+                                const optionItem = document.createElement('div');
+                                optionItem.className = 'search-dropdown-item';
+                                optionItem.textContent = config.configName || config.name || '未知配置';
+                                optionItem.dataset.value = config.id;
+                                
+                                optionItem.addEventListener('click', function() {
+                                    searchInput.value = this.textContent;
+                                    document.getElementById('llm-model-config').value = this.dataset.value;
+                                    dropdownElement.classList.add('hidden');
+                                });
+                                
+                                dropdownElement.appendChild(optionItem);
+                                
+                                // 如果当前配置ID匹配，显示配置名称
+                                if (currentConfigId && currentConfigId === String(config.id)) {
+                                    searchInput.value = config.configName || config.name || '未知配置';
+                                }
+                            });
+                        }
+                        
+                        // Show dropdown if there are results
+                        if (configs.length > 0) {
+                            dropdownElement.classList.remove('hidden');
+                        }
+                        
+                        // 调用回调函数
+                        if (callback) {
+                            callback(configs);
+                        }
+                    })
+                    .catch(error => {
+                        showToast('加载LLM配置失败，请稍后重试', false);
+                    });
+            }
+
+            // Search LLM configs with debounce and auto-complete
+            function setupLLMConfigSearch() {
+                const searchInput = document.getElementById('llm-model-config-search');
+                const dropdownElement = document.getElementById('llm-config-dropdown');
+                let searchTimeout;
+
+                searchInput.addEventListener('input', function(e) {
+                    const keyword = e.target.value.trim();
+
+                    // Clear previous timeout
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    
+                    // Set new timeout for debounce (300ms)
+                    searchTimeout = setTimeout(() => {
+                        if (keyword) {
+                            loadLLMConfigs(keyword);
+                        } else {
+                            // Clear dropdown when input is empty
+                            dropdownElement.classList.add('hidden');
+                            dropdownElement.innerHTML = '';
+                            document.getElementById('llm-model-config').value = '';
+                        }
+                    }, 300);
+                });
+                
+                // Show dropdown when input is focused
+                searchInput.addEventListener('focus', function() {
+                    const keyword = searchInput.value.trim();
+                    if (keyword) {
+                        loadLLMConfigs(keyword);
+                    } else {
+                        // If input is empty, load all configs
+                        loadLLMConfigs('');
+                    }
+                });
+                
+                // Hide dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!searchInput.contains(e.target) && !dropdownElement.contains(e.target)) {
+                        dropdownElement.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Debugging: Check if elements exist
+            // Make functions available globally for inline handlers
+            window.openAddModalToMemoryStrategy = openAddModalToMemoryStrategy;
+            window.closeStrategyModal = closeStrategyModal;
+            window.editStrategy = editStrategy;
+            window.loadStrategies = loadStrategies;
+            window.saveStrategy = saveStrategy;
+
+            // Strategy Detail Modal Functions
+            window.openDetailModal = function(id) {
+                authenticatedFetch(`/api/policy/detail?id=${id}`)
+                    .then(response => response.json())
+                    .then(strategy => {
+                        // Populate detail modal with strategy data
+                        document.getElementById('detail-policy-name').value = strategy.name || '';
+                        document.getElementById('detail-llm-config').value = strategy.llmModelConfigId || '';
+
+                        // Populate MemoryBase details
+                        if (strategy.memoryBase) {
+                            document.getElementById('detail-memory-type').value = strategy.memoryBase.type !== undefined ? getMemoryTypeText(strategy.memoryBase.type) : '默认类型';
+                            document.getElementById('detail-threshold').value = strategy.memoryBase.threshold !== undefined ? strategy.memoryBase.threshold : '';
+                            document.getElementById('detail-batch-analysis-size').value = strategy.memoryBase.batchAnalysisSize || '';
+                            document.getElementById('detail-max-length').value = strategy.memoryBase.maxLength || '';
+                            document.getElementById('detail-base-prompt').value = strategy.memoryBase.basePrompt || '';
+                            document.getElementById('detail-over-length-prompt').value = strategy.memoryBase.overLengthPrompt || '';
+                            document.getElementById('detail-with-history').value = strategy.memoryBase.withHistory ? 'true' : 'false';
+                            document.getElementById('detail-update-prompt').value = strategy.memoryBase.updatePrompt || '';
+
+                            // 根据记忆类型更新详情模态框的标签文本
+                            if (strategy.memoryBase.type === 1) { // 截断类型
+                                if (detailThresholdLabel) {
+                                    detailThresholdLabel.innerHTML = '最近消息轮数(一问一答)';
+                                }
+                            } else {
+                                if (detailThresholdLabel) {
+                                    detailThresholdLabel.innerHTML = '记忆阈值(达到此值时触发记忆)';
+                                }
+                            }
+                        }
+
+                        // 防止背景滚动
+                        document.body.style.overflow = 'hidden';
+
+                        // Show the detail modal
+                        const detailModal = document.getElementById('strategy-detail-modal');
+                        detailModal.classList.remove('hidden');
+                        // 使用requestAnimationFrame确保DOM更新后再添加active类
+                        requestAnimationFrame(() => {
+                            detailModal.classList.add('active');
+                        });
+                    })
+                    .catch(error => {
+                        showToast('加载策略详情失败，请稍后重试', false);
+                    });
+            };
+
+            window.closeStrategyDetailModal = function() {
+                const detailModal = document.getElementById('strategy-detail-modal');
+                detailModal.classList.remove('active');
+                // 等待动画完成后隐藏弹窗
+                setTimeout(() => {
+                    detailModal.classList.add('hidden');
+                    // 恢复背景滚动
+                    document.body.style.overflow = '';
+                }, 300); // 与CSS transition时间匹配
+            };
+
+
+        });
+    </script>
+</div>
+</html>

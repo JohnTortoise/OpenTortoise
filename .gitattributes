@@ -1,0 +1,5 @@
+# 将 HTML 文件识别为 Java 项目的模板文件
+*.html linguist-language=Java
+*.jsp linguist-language=Java
+*.ftl linguist-language=Java
+*.thymeleaf linguist-language=Java

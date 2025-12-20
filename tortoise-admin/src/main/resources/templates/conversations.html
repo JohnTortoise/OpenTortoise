@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content">
+    <div class="px-4 py-6 sm:px-0">
+        <!-- Search Form -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <form id="conversation-search-form" class="grid grid-cols-1 gap-6 sm:grid-cols-4">
+                <div>
+                    <label for="conversation-id-search" class="block text-sm font-medium text-gray-700">会话ID</label>
+                    <input type="text" id="conversation-id-search" name="conversationId"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="user-id-search" class="block text-sm font-medium text-gray-700">用户ID</label>
+                    <input type="text" id="user-id-search" name="userId"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit"
+                            class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-search mr-2"></i>搜索
+                    </button>
+                </div>
+                <div class="flex items-end">
+                    <button type="button" onclick="showImportModal()"
+                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        导入
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Conversations Table -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">会话ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LLM配置ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">更新时间</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="conversations-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Rows will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                加载中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div id="conversation-pagination-container" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <!-- Pagination will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                会话详情
+                            </h3>
+                            <div class="mt-4">
+                                <div id="messages-scroll-container" class="bg-gray-50 rounded-lg resizable-area" style="min-height: 400px; max-height: 80vh;">
+                                    <div id="messages-container" class="space-y-4">
+                                        <!-- Messages will be populated by JavaScript -->
+                                        <div class="text-center text-gray-500">加载中...</div>
+                                    </div>
+                                    <div id="loading-indicator" class="text-center text-gray-500 hidden mt-4">
+                                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                                        <span class="ml-2">加载中...</span>
+                                    </div>
+                                    <div id="no-more-messages" class="text-center text-gray-500 hidden mt-4">
+                                        没有更多消息了
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeDetailModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Memory Modal -->
+    <div id="memory-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                会话记忆
+                            </h3>
+                            <div class="mt-4">
+                                <div id="memories-scroll-container" class="bg-gray-50 rounded-lg resizable-area" style="min-height: 400px; max-height: 80vh;">
+                                    <div id="memories-container" class="space-y-4">
+                                        <!-- Memories will be populated by JavaScript -->
+                                    </div>
+                                    <div id="memory-loading-indicator" class="text-center text-gray-500 hidden">
+                                        <div class="spinner-border animate-spin inline-block w-4 h-4 border-2 rounded-full mr-2" role="status"></div>
+                                        加载中...
+                                    </div>
+                                    <div id="no-more-memories" class="text-center text-gray-500 hidden">
+                                        没有更多记忆了
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeMemoryModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cost Modal -->
+    <div id="cost-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                使用成本
+                            </h3>
+                            <div class="mt-4">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">模型名称</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">消耗类型</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">输入Token</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">输出Token</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">总Token</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">输入费用</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">输出费用</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">总费用</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="costs-table-body" class="bg-white divide-y divide-gray-200">
+                                            <!-- Rows will be populated by JavaScript -->
+                                            <tr>
+                                                <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">
+                                                    加载中...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div id="costs-pagination-container" class="mt-4"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeCostModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cost Detail Modal -->
+    <div id="cost-detail-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                成本详情
+                            </h3>
+                            <div class="mt-4">
+                                <!-- 消耗类型显示 -->
+                                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                                        <span class="text-sm font-medium text-blue-800">消耗类型: </span>
+                                        <span id="cost-type-display" class="text-sm text-blue-800 ml-1 font-semibold">加载中...</span>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="border border-gray-200 rounded-lg p-4">
+                                        <h4 class="text-md font-medium text-gray-900 mb-2">输入内容</h4>
+                                        <div id="cost-request-content" class="bg-gray-50 p-3 rounded whitespace-pre-wrap text-sm" style="min-height: 300px; max-height: 60vh;">
+                                            加载中...
+                                        </div>
+                                    </div>
+                                    <div class="border border-gray-200 rounded-lg p-4">
+                                        <h4 class="text-md font-medium text-gray-900 mb-2">输出内容</h4>
+                                        <div id="cost-response-content" class="bg-gray-50 p-3 rounded whitespace-pre-wrap text-sm" style="min-height: 300px; max-height: 60vh;">
+                                            加载中...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeCostDetailModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                导入会话数据
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <button type="button" onclick="downloadTemplate()"
+                                            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        <i class="fas fa-download mr-2"></i>下载模板
+                                    </button>
+                                    <p class="mt-1 text-xs text-gray-500">下载Excel模板，按照模板格式填写数据</p>
+                                </div>
+                                <div>
+                                    <input type="file" id="import-excel-file-input" accept=".xlsx,.xls"
+                                           class="hidden" onchange="handleImportFileSelect(event)">
+                                    <button type="button" onclick="document.getElementById('import-excel-file-input').click()"
+                                            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        <i class="fas fa-upload mr-2"></i>选择文件
+                                    </button>
+                                    <p id="import-file-name-display" class="mt-1 text-xs text-gray-500 hidden"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="confirm-import-btn" onclick="confirmImport()" disabled
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        导入
+                    </button>
+                    <button type="button" onclick="showImportHistoryModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        查看导入历史
+                    </button>
+                    <button type="button" onclick="closeImportModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Import Modal -->
+    <div id="confirm-import-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                导入确认
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="text-center">
+                                    <p class="text-sm text-gray-700">即将开始</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="text-sm font-medium text-gray-900 mb-2">注意事项：</h4>
+                                    <ul class="text-sm text-gray-700 space-y-1">
+                                        <li>1. unique_id是全局唯一的</li>
+                                        <li>2. 模板涉及的字段均不能为空</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="confirm-import-final-btn"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        确定
+                    </button>
+                    <button type="button" onclick="closeConfirmImportModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import History Modal -->
+    <div id="import-history-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                导入记录历史
+                            </h3>
+
+                            <!-- Search Form for Import History -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                <form id="import-history-search-form" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                                    <div>
+                                        <label for="import-history-create-id" class="block text-sm font-medium text-gray-700">导入者ID</label>
+                                        <input type="text" id="import-history-create-id" name="createId"
+                                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="import-history-file-name" class="block text-sm font-medium text-gray-700">文件名</label>
+                                        <input type="text" id="import-history-file-name" name="fileName"
+                                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="import-history-status" class="block text-sm font-medium text-gray-700">状态</label>
+                                        <select id="import-history-status" name="status"
+                                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">全部</option>
+                                            <option value="0">处理中</option>
+                                            <option value="1">成功</option>
+                                            <option value="2">失败</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button type="submit"
+                                                class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            <i class="fas fa-search mr-2"></i>查询
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Import History Table -->
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">导入用户ID</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">导入时间</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">更新时间</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">错误信息</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="import-history-table-body" class="bg-white divide-y divide-gray-200">
+                                        <!-- Rows will be populated by JavaScript -->
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                                加载中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div id="import-history-pagination-container" class="mt-4">
+                                <!-- Pagination will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeImportHistoryModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // State management
+            let currentConversationPage = 1;
+            let currentConversationSearch = {
+                conversationId: '',
+                userId: ''
+            };
+            let isPageActive = false;
+            
+            // DOM Elements
+            const conversationSearchForm = document.getElementById('conversation-search-form');
+            const conversationsTableBody = document.getElementById('conversations-table-body');
+            const conversationPaginationContainer = document.getElementById('conversation-pagination-container');
+            const importBtn = document.getElementById('import-btn');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            
+            // Event Listeners
+            conversationSearchForm.addEventListener('submit', handleConversationSearch);
+            document.getElementById('import-history-search-form').addEventListener('submit', handleImportHistorySearch);
+            
+            // Initialize page active state
+            isPageActive = document.getElementById('conversations-page').classList.contains('active-page');
+            
+            // Load initial data only if page is active
+            if (isPageActive) {
+                loadConversations(currentConversationPage);
+            }
+            
+            // Handle page changes
+            document.addEventListener('pageChanged', function(e) {
+                if (e.detail === 'conversations') {
+                    // Only load if page wasn't already active
+                    if (!isPageActive) {
+                        isPageActive = true;
+                        loadConversations(currentConversationPage);
+                    }
+                } else {
+                    isPageActive = false;
+                }
+            });
+            
+            // 使用全局的showToast和hideToast函数（在layout.html中定义）
+            
+            // Functions
+            function handleConversationSearch(e) {
+                e.preventDefault();
+                currentConversationSearch.conversationId = document.getElementById('conversation-id-search').value;
+                currentConversationSearch.userId = document.getElementById('user-id-search').value;
+                currentConversationPage = 1;
+                loadConversations(currentConversationPage);
+            }
+            
+            function loadConversations(page) {
+                const params = new URLSearchParams({
+                    pageNum: page,
+                    pageSize: 10,
+                    conversationId: currentConversationSearch.conversationId,
+                    userId: currentConversationSearch.userId
+                });
+                
+                authenticatedFetch(`/api/conversations/page?${params}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderConversationsTable(data.records);
+                        renderConversationPagination(data);
+                    })
+                    .catch(error => {
+                        conversationsTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 text-center text-sm text-red-500">
+                                    加载数据失败，请稍后重试
+                                </td>
+                            </tr>
+                        `;
+                    });
+            }
+            
+            function renderConversationsTable(conversations) {
+                if (!conversations || conversations.length === 0) {
+                    conversationsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                暂无数据
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                conversationsTableBody.innerHTML = conversations.map(conversation => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${conversation.conversationId || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.createUserId || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.llmConfigId || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.createTime || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.updateTime || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="showDetails('${conversation.conversationId}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                <i class="fas fa-info-circle"></i> 详情
+                            </button>
+                            <button onclick="showMemory('${conversation.conversationId}')" class="text-green-600 hover:text-green-900 mr-3">
+                                <i class="fas fa-memory"></i> 记忆
+                            </button>
+                            <button onclick="showCost('${conversation.conversationId}')" class="text-purple-600 hover:text-purple-900">
+                                <i class="fas fa-dollar-sign"></i> 成本
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            function renderConversationPagination(pageData) {
+                const { current, pages, size, total } = pageData;
+                const startItem = (current - 1) * size + 1;
+                const endItem = Math.min(current * size, total);
+                
+                // 当没有数据时，显示第0到0条结果
+                const displayStart = total > 0 ? startItem : 0;
+                const displayEnd = total > 0 ? endItem : 0;
+                
+                // Simplified pagination with only Previous, Current (input) and Next buttons
+                let paginationHtml = `
+                    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                        <div class="flex flex-1 justify-between sm:hidden">
+                            <button id="conversations-mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                上一页
+                            </button>
+                            <button id="conversations-mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                下一页
+                            </button>
+                        </div>
+                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
+                                </p>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-700 mr-2">第</span>
+                                    <input type="number" min="1" max="${pages}" value="${current}" 
+                                           class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                           id="conversations-page-input">
+                                    <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
+                                    <button id="conversations-page-go-btn" 
+                                            class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        跳转
+                                    </button>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button id="conversations-prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button id="conversations-next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                conversationPaginationContainer.innerHTML = paginationHtml;
+                
+                // Add event listeners after rendering
+                setTimeout(() => {
+                    // Previous page buttons
+                    const prevBtn = document.getElementById('conversations-prev-btn');
+                    const mobilePrevBtn = document.getElementById('conversations-mobile-prev-btn');
+                    
+                    // Next page buttons
+                    const nextBtn = document.getElementById('conversations-next-btn');
+                    const mobileNextBtn = document.getElementById('conversations-mobile-next-btn');
+                    
+                    // Page input and go button
+                    const pageInput = document.getElementById('conversations-page-input');
+                    const goBtn = document.getElementById('conversations-page-go-btn');
+                    
+                    // Disable/enable buttons based on current page
+                    if (current <= 1) {
+                        if (prevBtn) prevBtn.disabled = true;
+                        if (mobilePrevBtn) mobilePrevBtn.disabled = true;
+                        if (prevBtn) prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        if (mobilePrevBtn) mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                    } else {
+                        if (prevBtn) {
+                            prevBtn.disabled = false;
+                            prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            prevBtn.onclick = () => {
+                                loadConversations(current - 1);
+                            };
+                        }
+                        if (mobilePrevBtn) {
+                            mobilePrevBtn.disabled = false;
+                            mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobilePrevBtn.onclick = () => {
+                                loadConversations(current - 1);
+                            };
+                        }
+                    }
+                    
+                    if (current >= pages) {
+                        if (nextBtn) nextBtn.disabled = true;
+                        if (mobileNextBtn) mobileNextBtn.disabled = true;
+                        if (nextBtn) nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        if (mobileNextBtn) mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                    } else {
+                        if (nextBtn) {
+                            nextBtn.disabled = false;
+                            nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            nextBtn.onclick = () => {
+                                loadConversations(current + 1);
+                            };
+                        }
+                        if (mobileNextBtn) {
+                            mobileNextBtn.disabled = false;
+                            mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobileNextBtn.onclick = () => {
+                                loadConversations(current + 1);
+                            };
+                        }
+                    }
+                    
+                    // Page input and go button
+                    if (pageInput && goBtn) {
+                        goBtn.onclick = () => {
+                            const page = parseInt(pageInput.value);
+                            if (!isNaN(page) && page >= 1 && page <= pages) {
+                                loadConversations(page);
+                            } else {
+                                showToast('请输入有效的页码', false);
+                            }
+                        };
+                        
+                        // Enter key support
+                        pageInput.onkeyup = (event) => {
+                            if (event.key === 'Enter') {
+                                const page = parseInt(pageInput.value);
+                                if (!isNaN(page) && page >= 1 && page <= pages) {
+                                    loadConversations(page);
+                                } else {
+                                    showToast('请输入有效的页码', false);
+                                }
+                            }
+                        };
+                    }
+                }, 0);
+            }
+            
+            // Detail Modal Functions
+            function showDetails(conversationId) {
+                const detailModal = document.getElementById('detail-modal');
+                const messagesContainer = document.getElementById('messages-container');
+                const scrollContainer = document.getElementById('messages-scroll-container');
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const noMoreMessages = document.getElementById('no-more-messages');
+                
+                // 初始化状态
+                detailModal.conversationId = conversationId;
+                detailModal.currentPage = 1;
+                detailModal.totalPages = 1; // 默认至少有一页
+                detailModal.hasMore = true;
+                detailModal.loading = false;
+                
+                // Show loading state
+                messagesContainer.innerHTML = '<div class="text-center text-gray-500">加载中...</div>';
+                loadingIndicator.classList.add('hidden');
+                noMoreMessages.classList.add('hidden');
+                detailModal.classList.add('active');
+                
+                // Load messages
+                loadMessages(conversationId, 1, 10);
+                
+                // 添加滚动事件监听器
+                scrollContainer.addEventListener('scroll', handleScroll);
+            }
+            
+            function loadMessages(conversationId, pageNum, pageSize) {
+                const detailModal = document.getElementById('detail-modal');
+                const messagesContainer = document.getElementById('messages-container');
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const noMoreMessages = document.getElementById('no-more-messages');
+                
+                // 如果已经在加载或没有更多数据，则直接返回
+                if (detailModal.loading || !detailModal.hasMore) {
+                    return;
+                }
+                
+                // 设置加载状态
+                detailModal.loading = true;
+                if (pageNum === 1) {
+                    messagesContainer.innerHTML = '<div class="text-center text-gray-500">加载中...</div>';
+                }
+                loadingIndicator.classList.remove('hidden');
+                
+                // Load messages
+                const params = new URLSearchParams({
+                    conversationId: conversationId,
+                    pageNum: pageNum,
+                    pageSize: pageSize
+                });
+                
+                authenticatedFetch(`/api/messages/page?${params}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        detailModal.loading = false;
+                        loadingIndicator.classList.add('hidden');
+                        
+                        if (data.records && data.records.length > 0) {
+                            renderMessages(data.records, pageNum === 1);
+                            
+                            // 更新分页信息
+                            detailModal.currentPage = data.current;
+                            detailModal.totalPages = data.pages; // 保存总页数
+                            detailModal.hasMore = data.current < data.pages;
+                            
+                            // 如果没有更多数据，显示提示
+                            if (!detailModal.hasMore) {
+                                noMoreMessages.classList.remove('hidden');
+                            }
+                        } else {
+                            if (pageNum === 1) {
+                                messagesContainer.innerHTML = '<div class="text-center text-gray-500">暂无消息</div>';
+                            }
+                            detailModal.hasMore = false;
+                            noMoreMessages.classList.remove('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        detailModal.loading = false;
+                        loadingIndicator.classList.add('hidden');
+                        
+                        if (pageNum === 1) {
+                            messagesContainer.innerHTML = '<div class="text-center text-red-500">加载失败</div>';
+                        }
+                        showToast('加载会话详情失败', false);
+                    });
+            }
+            
+            function handleScroll(event) {
+                const detailModal = document.getElementById('detail-modal');
+                const scrollContainer = event.target;
+
+                // 检查是否滚动到底部（留出一定的缓冲区）
+                const isNearBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 200;
+
+                if (isNearBottom && detailModal.hasMore && !detailModal.loading) {
+                    loadMessages(detailModal.conversationId, detailModal.currentPage + 1, 10);
+                }
+            }
+            
+            function renderMessages(messages, clearExisting = false) {
+                const messagesContainer = document.getElementById('messages-container');
+                const scrollContainer = document.getElementById('messages-scroll-container');
+
+                if (!messages || messages.length === 0) {
+                    if (clearExisting) {
+                        messagesContainer.innerHTML = '<div class="text-center text-gray-500">暂无消息</div>';
+                    }
+                    return;
+                }
+
+                // 如果是首次加载，清空容器并创建新的容器
+                if (clearExisting) {
+                    messagesContainer.innerHTML = '<div class="space-y-4" id="messages-list"></div>';
+                }
+
+                // 获取消息列表容器
+                const messagesList = document.getElementById('messages-list') || messagesContainer.querySelector('.space-y-4') || messagesContainer;
+
+                // 生成消息HTML
+                const messagesHtml = messages.map((message, index) => `
+                    <div class="flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}">
+                        <div class="border rounded-lg p-4 max-w-md ${message.role === 'user' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}">
+                            <div class="font-medium ${message.role === 'user' ? 'text-blue-700' : 'text-green-700'}">
+                                ${message.role === 'user' ? '用户' : '助手'}
+                            </div>
+                            <div class="mt-2 text-gray-700 whitespace-pre-wrap">${message.content || ''}</div>
+                            <div class="mt-2 text-xs text-gray-500">${message.timestamp || ''}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // 如果是首次加载，直接设置内容；否则追加到现有内容的后面
+                if (clearExisting) {
+                    messagesList.innerHTML = messagesHtml;
+                } else {
+                    // 临时禁用滚动事件监听器
+                    const detailModal = document.getElementById('detail-modal');
+                    const originalHasMore = detailModal.hasMore;
+                    const originalLoading = detailModal.loading;
+
+                    // 设置标志位防止滚动事件触发
+                    detailModal.hasMore = false;
+                    detailModal.loading = true;
+
+                    // 记录插入新内容前的高度
+                    const previousScrollHeight = scrollContainer.scrollHeight;
+
+                    // 在现有内容后面追加新内容
+                    messagesList.insertAdjacentHTML('beforeend', messagesHtml);
+
+                    // 计算新内容的高度
+                    const newScrollHeight = scrollContainer.scrollHeight;
+                    const addedHeight = newScrollHeight - previousScrollHeight;
+
+                    // 延迟执行滚动位置调整，避免与DOM更新冲突
+                    setTimeout(() => {
+                        // 将滚动条定位到新内容的开始位置
+                        scrollContainer.scrollTop = previousScrollHeight - 50; // 稍微向上一点，让用户能看到新内容的开始
+
+                        // 恢复标志位
+                        detailModal.hasMore = originalHasMore;
+                        detailModal.loading = originalLoading;
+                    }, 50);
+                }
+            }
+            
+            function closeDetailModal() {
+                const detailModal = document.getElementById('detail-modal');
+                const scrollContainer = document.getElementById('messages-scroll-container');
+                
+                // 移除滚动事件监听器
+                scrollContainer.removeEventListener('scroll', handleScroll);
+                
+                // 重置模态框状态
+                detailModal.classList.remove('active');
+                detailModal.conversationId = null;
+                detailModal.currentPage = 1;
+                detailModal.hasMore = true;
+                detailModal.loading = false;
+                
+                // 隐藏加载指示器和无更多消息提示
+                document.getElementById('loading-indicator').classList.add('hidden');
+                document.getElementById('no-more-messages').classList.add('hidden');
+            }
+            
+            // Memory Modal Functions
+            function showMemory(conversationId) {
+                const memoryModal = document.getElementById('memory-modal');
+                const memoriesContainer = document.getElementById('memories-container');
+                const scrollContainer = document.getElementById('memories-scroll-container');
+                const loadingIndicator = document.getElementById('memory-loading-indicator');
+                const noMoreMemories = document.getElementById('no-more-memories');
+                
+                // 初始化状态
+                memoryModal.conversationId = conversationId;
+                memoryModal.loading = false;
+                
+                // Show loading state
+                memoriesContainer.innerHTML = '';
+                loadingIndicator.classList.remove('hidden');
+                noMoreMemories.classList.add('hidden');
+                memoryModal.classList.add('active');
+                
+                // 添加滚动事件监听器
+                scrollContainer.addEventListener('scroll', handleMemoryScroll);
+                
+                // Load memories
+                loadMemoryData(conversationId);
+            }
+            
+            function loadMemoryData(conversationId) {
+                const memoryModal = document.getElementById('memory-modal');
+                const loadingIndicator = document.getElementById('memory-loading-indicator');
+                const noMoreMemories = document.getElementById('no-more-memories');
+                
+                // 防止重复加载
+                if (memoryModal.loading) return;
+                
+                memoryModal.loading = true;
+                loadingIndicator.classList.remove('hidden');
+                
+                // Load memories
+                authenticatedFetch(`/api/memories/getMemoriesByConversationId?conversationId=${conversationId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        memoryModal.loading = false;
+                        loadingIndicator.classList.add('hidden');
+                        
+                        if (data && data.length > 0) {
+                            renderMemories(data);
+                            // 显示无更多数据提示
+                            noMoreMemories.classList.remove('hidden');
+                        } else {
+                            const memoriesContainer = document.getElementById('memories-container');
+                            memoriesContainer.innerHTML = '<div class="text-center text-gray-500">暂无记忆</div>';
+                            noMoreMemories.classList.remove('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        memoryModal.loading = false;
+                        loadingIndicator.classList.add('hidden');
+                        
+                        const memoriesContainer = document.getElementById('memories-container');
+                        memoriesContainer.innerHTML = '<div class="text-center text-red-500">加载失败</div>';
+                        showToast('加载会话记忆失败', false);
+                    });
+            }
+            
+            function handleMemoryScroll() {
+                // 因为是一次性加载所有数据，所以不需要滚动加载更多
+                // 这里保留函数以防将来需要扩展功能
+            }
+            
+            function renderMemories(memories) {
+                const memoriesContainer = document.getElementById('memories-container');
+                
+                if (!memories || memories.length === 0) {
+                    memoriesContainer.innerHTML = '<div class="text-center text-gray-500">暂无记忆</div>';
+                    return;
+                }
+                
+                // 创建消息列表容器
+                memoriesContainer.innerHTML = '<div class="space-y-4" id="memories-list"></div>';
+                
+                // 获取消息列表容器
+                const memoriesList = document.getElementById('memories-list');
+                
+                // 生成消息HTML
+                const memoriesHtml = memories.map((memory, index) => {
+                    // 根据角色确定样式
+                    const isUser = memory.role === 'user';
+                    const bgColor = isUser ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200';
+                    const textColor = isUser ? 'text-blue-700' : 'text-green-700';
+                    const roleName = isUser ? '用户' : '助手';
+                    
+                    return `
+                        <div class="flex ${isUser ? 'justify-start' : 'justify-end'}">
+                            <div class="border rounded-lg p-4 max-w-md ${bgColor}">
+                                <div class="font-medium ${textColor}">
+                                    ${roleName}
+                                </div>
+                                <div class="mt-2 text-gray-700 whitespace-pre-wrap">${memory.content || ''}</div>
+                                <div class="mt-2 text-xs text-gray-500">${memory.timestamp || ''}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // 设置内容
+                memoriesList.innerHTML = memoriesHtml;
+            }
+            
+            function closeMemoryModal() {
+                const memoryModal = document.getElementById('memory-modal');
+                const scrollContainer = document.getElementById('memories-scroll-container');
+                
+                // 移除滚动事件监听器
+                scrollContainer.removeEventListener('scroll', handleMemoryScroll);
+                
+                // 重置模态框状态
+                memoryModal.classList.remove('active');
+                memoryModal.conversationId = null;
+                memoryModal.loading = false;
+                
+                // 隐藏加载指示器和无更多消息提示
+                document.getElementById('memory-loading-indicator').classList.add('hidden');
+                document.getElementById('no-more-memories').classList.add('hidden');
+            }
+            
+            // Cost Modal Functions
+            function showCost(conversationId) {
+                // Initialize pagination state
+                const costModal = document.getElementById('cost-modal');
+                costModal.currentCostPage = 1;
+                costModal.costPageSize = 10;
+                costModal.conversationId = conversationId;
+                
+                loadCosts(conversationId, 1);
+            }
+            
+            function loadCosts(conversationId, page) {
+                const costModal = document.getElementById('cost-modal');
+                const costsTableBody = document.getElementById('costs-table-body');
+                const costsPaginationContainer = document.getElementById('costs-pagination-container');
+                
+                // Show loading state
+                costsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">
+                            加载中...
+                        </td>
+                    </tr>
+                `;
+                
+                // Hide pagination if exists
+                if (costsPaginationContainer) {
+                    costsPaginationContainer.innerHTML = '';
+                }
+                
+                costModal.classList.add('active');
+                
+                // Update current page
+                costModal.currentCostPage = page;
+                
+                // Load costs
+                const params = new URLSearchParams({
+                    conversationId: conversationId,
+                    pageNum: page,
+                    pageSize: costModal.costPageSize || 10
+                });
+                
+                authenticatedFetch(`/api/llm-usage/page?${params}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.records) {
+                            renderCosts(data.records);
+                            renderCostsPagination(data);
+                        } else {
+                            costsTableBody.innerHTML = `
+                                <tr>
+                                    <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">
+                                        暂无数据
+                                    </td>
+                                </tr>
+                            `;
+                            // Clear pagination
+                            if (costsPaginationContainer) {
+                                costsPaginationContainer.innerHTML = '';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        costsTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="10" class="px-6 py-4 text-center text-sm text-red-500">
+                                    加载失败
+                                </td>
+                            </tr>
+                        `;
+                        // Clear pagination
+                        if (costsPaginationContainer) {
+                            costsPaginationContainer.innerHTML = '';
+                        }
+                        showToast('加载使用成本失败', false);
+                    });
+            }
+            
+            function renderCosts(costs) {
+                const costsTableBody = document.getElementById('costs-table-body');
+                
+                if (!costs || costs.length === 0) {
+                    costsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">
+                                暂无数据
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                costsTableBody.innerHTML = costs.map(cost => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.modelName || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.consumeDesc || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.inputTokens || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.outputTokens || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.totalTokens || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.inputCost || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.outputCost || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.totalCost || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${cost.createTime || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="showCostDetail('${cost.id}')" class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-info-circle"></i> 详情
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            function renderCostsPagination(pageData) {
+                const costsPaginationContainer = document.getElementById('costs-pagination-container');
+                // If pagination container doesn't exist, create it
+                if (!costsPaginationContainer) {
+                    return;
+                }
+                
+                const { current, pages, size, total } = pageData;
+                const startItem = (current - 1) * size + 1;
+                const endItem = Math.min(current * size, total);
+                
+                // 当没有数据时，显示第0到0条结果
+                const displayStart = total > 0 ? startItem : 0;
+                const displayEnd = total > 0 ? endItem : 0;
+                
+                // Simplified pagination with only Previous, Current (input) and Next buttons
+                let paginationHtml = `
+                    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                        <div class="flex flex-1 justify-between sm:hidden">
+                            <button id="mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                上一页
+                            </button>
+                            <button id="mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                下一页
+                            </button>
+                        </div>
+                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
+                                </p>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-700 mr-2">第</span>
+                                    <input type="number" min="1" max="${pages}" value="${current}" 
+                                           class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                           id="costs-page-input">
+                                    <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
+                                    <button id="costs-page-go-btn" 
+                                            class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        跳转
+                                    </button>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button id="prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button id="next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                costsPaginationContainer.innerHTML = paginationHtml;
+                
+                // Add event listeners after rendering
+                setTimeout(() => {
+                    // Get current conversation ID
+                    const costModal = document.getElementById('cost-modal');
+                    const conversationId = costModal ? costModal.conversationId : null;
+                    
+                    // Previous page buttons
+                    const prevBtn = document.getElementById('prev-btn');
+                    const mobilePrevBtn = document.getElementById('mobile-prev-btn');
+                    
+                    // Next page buttons
+                    const nextBtn = document.getElementById('next-btn');
+                    const mobileNextBtn = document.getElementById('mobile-next-btn');
+                    
+                    // Page input and go button
+                    const pageInput = document.getElementById('costs-page-input');
+                    const goBtn = document.getElementById('costs-page-go-btn');
+                    
+                    // Disable/enable buttons based on current page
+                    if (current <= 1) {
+                        if (prevBtn) prevBtn.disabled = true;
+                        if (mobilePrevBtn) mobilePrevBtn.disabled = true;
+                        if (prevBtn) prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        if (mobilePrevBtn) mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                    } else {
+                        if (prevBtn) {
+                            prevBtn.disabled = false;
+                            prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            prevBtn.onclick = () => {
+                                if (conversationId) {
+                                    loadCosts(conversationId, current - 1);
+                                }
+                            };
+                        }
+                        if (mobilePrevBtn) {
+                            mobilePrevBtn.disabled = false;
+                            mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobilePrevBtn.onclick = () => {
+                                if (conversationId) {
+                                    loadCosts(conversationId, current - 1);
+                                }
+                            };
+                        }
+                    }
+                    
+                    if (current >= pages) {
+                        if (nextBtn) nextBtn.disabled = true;
+                        if (mobileNextBtn) mobileNextBtn.disabled = true;
+                        if (nextBtn) nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        if (mobileNextBtn) mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                    } else {
+                        if (nextBtn) {
+                            nextBtn.disabled = false;
+                            nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            nextBtn.onclick = () => {
+                                if (conversationId) {
+                                    loadCosts(conversationId, current + 1);
+                                }
+                            };
+                        }
+                        if (mobileNextBtn) {
+                            mobileNextBtn.disabled = false;
+                            mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobileNextBtn.onclick = () => {
+                                if (conversationId) {
+                                    loadCosts(conversationId, current + 1);
+                                }
+                            };
+                        }
+                    }
+                    
+                    // Page input and go button
+                    if (pageInput && goBtn) {
+                        goBtn.onclick = () => {
+                            const page = parseInt(pageInput.value);
+                            if (!isNaN(page) && page >= 1 && page <= pages && conversationId) {
+                                loadCosts(conversationId, page);
+                            } else {
+                                showToast('请输入有效的页码', false);
+                            }
+                        };
+                        
+                        // Enter key support
+                        pageInput.onkeyup = (event) => {
+                            if (event.key === 'Enter') {
+                                const page = parseInt(pageInput.value);
+                                if (!isNaN(page) && page >= 1 && page <= pages && conversationId) {
+                                    loadCosts(conversationId, page);
+                                } else {
+                                    showToast('请输入有效的页码', false);
+                                }
+                            }
+                        };
+                    }
+                }, 0);
+            }
+            
+            function closeCostModal() {
+                document.getElementById('cost-modal').classList.remove('active');
+            }
+            
+            function formatJsonContent(content) {
+                if (!content || typeof content !== 'string') {
+                    return content;
+                }
+
+                try {
+                    // 尝试解析JSON并格式化
+                    const parsed = JSON.parse(content);
+                    return JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // 格式化失败，返回原始内容
+                    return content;
+                }
+            }
+
+            function showCostDetail(costId) {
+                const costDetailModal = document.getElementById('cost-detail-modal');
+                const requestContentDiv = document.getElementById('cost-request-content');
+                const responseContentDiv = document.getElementById('cost-response-content');
+                const costTypeDisplay = document.getElementById('cost-type-display');
+
+                // Show loading state
+                requestContentDiv.textContent = '加载中...';
+                responseContentDiv.textContent = '加载中...';
+                costTypeDisplay.textContent = '加载中...';
+                costDetailModal.classList.add('active');
+
+                // Fetch cost detail
+                authenticatedFetch(`/api/llm-usage/detail?id=${costId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data) {
+                            // 显示消耗类型
+                            costTypeDisplay.textContent = getConsumeTypeDesc(data.type);
+                            requestContentDiv.textContent = formatJsonContent(data.requestContent) || '无输入内容';
+                            responseContentDiv.textContent = formatJsonContent(data.responseContent) || '无输出内容';
+                        } else {
+                            costTypeDisplay.textContent = '无数据';
+                            requestContentDiv.textContent = '无数据';
+                            responseContentDiv.textContent = '无数据';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading cost detail:', error);
+                        costTypeDisplay.textContent = '加载失败';
+                        requestContentDiv.textContent = '加载失败: ' + error.message;
+                        responseContentDiv.textContent = '加载失败: ' + error.message;
+                    });
+            }
+            
+            // 根据type值获取消耗类型描述
+            function getConsumeTypeDesc(type) {
+                switch(type) {
+                    case 0: return '会话';
+                    case 1: return '记忆生成';
+                    case 2: return '记忆更新';
+                    case 3: return '记忆精简';
+                    default: return '未知类型';
+                }
+            }
+
+            function closeCostDetailModal() {
+                document.getElementById('cost-detail-modal').classList.remove('active');
+            }
+            
+            // Import Functions
+            let selectedImportFile = null;
+
+            function showImportModal() {
+                const importModal = document.getElementById('import-modal');
+                importModal.classList.add('active');
+                // 重置文件选择状态
+                resetImportFileSelection();
+            }
+
+            function closeImportModal() {
+                const importModal = document.getElementById('import-modal');
+                importModal.classList.remove('active');
+                // 重置文件选择状态
+                resetImportFileSelection();
+            }
+
+            function downloadTemplate() {
+                showToast('正在下载模板...', true);
+
+                // 使用authenticatedFetch获取文件
+                authenticatedFetch('/api/conversations/download-template')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        // 创建blob URL并下载
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'conversaion_import_template.xlsx';
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                        showToast('模板下载成功', true);
+                    })
+                    .catch(error => {
+                        console.error('Download error:', error);
+                        showToast('模板下载失败，请稍后重试', false);
+                    });
+            }
+
+            function handleImportFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    // 检查文件类型
+                    const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+                    if (!allowedTypes.includes(file.type)) {
+                        showToast('请选择Excel文件 (.xlsx 或 .xls)', false);
+                        return;
+                    }
+
+                    // 检查文件大小 (限制为10MB)
+                    const maxSize = 100 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        showToast('文件大小不能超过100MB', false);
+                        return;
+                    }
+
+                    selectedImportFile = file;
+                    const fileNameDisplay = document.getElementById('import-file-name-display');
+                    fileNameDisplay.textContent = `已选择: ${file.name}`;
+                    fileNameDisplay.classList.remove('hidden');
+                    document.getElementById('confirm-import-btn').disabled = false;
+                    showToast('文件选择成功', true);
+                }
+            }
+
+            function confirmImport() {
+                if (!selectedImportFile) {
+                    showToast('请先选择文件', false);
+                    return;
+                }
+
+                // 显示自定义确认对话框
+                showConfirmImportModal();
+            }
+
+            function proceedWithImport() {
+                const formData = new FormData();
+                formData.append('file', selectedImportFile);
+
+                // 禁用导入按钮
+                const importBtn = document.getElementById('confirm-import-btn');
+                importBtn.disabled = true;
+                importBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>导入中...';
+
+                showToast('开始导入，请稍候...', true);
+
+                // 特殊处理 FormData 请求，不设置 Content-Type 让浏览器自动处理
+                fetch('/api/conversations/import-excel', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // 状态码为200，直接显示成功消息
+                        showToast('导入成功，请等待一段时间', true);
+                        // 刷新会话列表
+                        loadConversations(currentConversationPage);
+                        // 关闭模态框
+                        closeImportModal();
+                    } else {
+                        // 非200状态码，尝试读取错误信息
+                        return response.text().then(text => {
+                            throw new Error(text || '导入失败');
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Import error:', error);
+                    showToast('导入失败，请检查网络连接或文件格式', false);
+                })
+                .finally(() => {
+                    // 恢复导入按钮
+                    importBtn.disabled = false;
+                    importBtn.innerHTML = '<i class="fas fa-file-import mr-2"></i>导入';
+                });
+            }
+
+            function resetImportFileSelection() {
+                selectedImportFile = null;
+                document.getElementById('import-excel-file-input').value = '';
+                const fileNameDisplay = document.getElementById('import-file-name-display');
+                fileNameDisplay.classList.add('hidden');
+                document.getElementById('confirm-import-btn').disabled = true;
+            }
+
+            // Import History Functions
+            let currentImportHistoryPage = 1;
+            let currentImportHistorySearch = {
+                createId: '',
+                fileName: '',
+                status: ''
+            };
+
+            function showConfirmImportModal() {
+                const confirmImportModal = document.getElementById('confirm-import-modal');
+                confirmImportModal.classList.add('active');
+
+                // 设置确定按钮的点击事件
+                const confirmBtn = document.getElementById('confirm-import-final-btn');
+                confirmBtn.onclick = () => {
+                    closeConfirmImportModal();
+                    proceedWithImport();
+                };
+            }
+
+            function closeConfirmImportModal() {
+                const confirmImportModal = document.getElementById('confirm-import-modal');
+                confirmImportModal.classList.remove('active');
+            }
+
+            function showImportHistoryModal() {
+                const importHistoryModal = document.getElementById('import-history-modal');
+                importHistoryModal.classList.add('active');
+                // 重置搜索条件
+                document.getElementById('import-history-create-id').value = '';
+                document.getElementById('import-history-file-name').value = '';
+                document.getElementById('import-history-status').value = '';
+                currentImportHistorySearch = { createId: '', fileName: '', status: '' };
+                currentImportHistoryPage = 1;
+                // 加载数据
+                loadImportHistory(currentImportHistoryPage);
+            }
+
+            function closeImportHistoryModal() {
+                const importHistoryModal = document.getElementById('import-history-modal');
+                importHistoryModal.classList.remove('active');
+            }
+
+            function handleImportHistorySearch(e) {
+                e.preventDefault();
+                currentImportHistorySearch.createId = document.getElementById('import-history-create-id').value;
+                currentImportHistorySearch.fileName = document.getElementById('import-history-file-name').value;
+                currentImportHistorySearch.status = document.getElementById('import-history-status').value;
+                currentImportHistoryPage = 1;
+                loadImportHistory(currentImportHistoryPage);
+            }
+
+            function loadImportHistory(page) {
+                const params = new URLSearchParams({
+                    pageNum: page,
+                    pageSize: 10
+                });
+
+                // 只有当有值时才添加参数
+                if (currentImportHistorySearch.createId) {
+                    params.append('createId', currentImportHistorySearch.createId);
+                }
+                if (currentImportHistorySearch.fileName) {
+                    params.append('fileName', currentImportHistorySearch.fileName);
+                }
+                if (currentImportHistorySearch.status !== '') {
+                    params.append('status', currentImportHistorySearch.status);
+                }
+
+                const importHistoryTableBody = document.getElementById('import-history-table-body');
+                const importHistoryPaginationContainer = document.getElementById('import-history-pagination-container');
+
+                // Show loading state
+                importHistoryTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                            加载中...
+                        </td>
+                    </tr>
+                `;
+
+                authenticatedFetch(`/api/conversations/importRecordPage?${params}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        renderImportHistoryTable(data.records);
+                        renderImportHistoryPagination(data);
+                    })
+                    .catch(error => {
+                        console.error('Load import history error:', error);
+                        importHistoryTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 text-center text-sm text-red-500">
+                                    加载数据失败，请稍后重试
+                                </td>
+                            </tr>
+                        `;
+                    });
+            }
+
+            function renderImportHistoryTable(records) {
+                const importHistoryTableBody = document.getElementById('import-history-table-body');
+
+                if (!records || records.length === 0) {
+                    importHistoryTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                暂无数据
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                importHistoryTableBody.innerHTML = records.map(record => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${record.importName || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.createUserId || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.createTime || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.updateTime || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${record.status === 1 ? 'bg-green-100 text-green-800' : record.status === 2 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${record.status === 1 ? '成功' : record.status === 2 ? '失败' : '处理中'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="${record.errorInfo || ''}">${record.errorInfo || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+
+            function renderImportHistoryPagination(pageData) {
+                const importHistoryPaginationContainer = document.getElementById('import-history-pagination-container');
+                const { current, pages, size, total } = pageData;
+                const startItem = (current - 1) * size + 1;
+                const endItem = Math.min(current * size, total);
+
+                // 当没有数据时，显示第0到0条结果
+                const displayStart = total > 0 ? startItem : 0;
+                const displayEnd = total > 0 ? endItem : 0;
+
+                // Simplified pagination with only Previous, Current (input) and Next buttons
+                let paginationHtml = `
+                    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                        <div class="flex flex-1 justify-between sm:hidden">
+                            <button id="import-history-mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                上一页
+                            </button>
+                            <button id="import-history-mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                下一页
+                            </button>
+                        </div>
+                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
+                                </p>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-700 mr-2">第</span>
+                                    <input type="number" min="1" max="${pages}" value="${current}"
+                                           class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                           id="import-history-page-input">
+                                    <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
+                                    <button id="import-history-page-go-btn"
+                                            class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        跳转
+                                    </button>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button id="import-history-prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button id="import-history-next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                importHistoryPaginationContainer.innerHTML = paginationHtml;
+
+                // Add event listeners after rendering
+                setTimeout(() => {
+                    // Previous page buttons
+                    const prevBtn = document.getElementById('import-history-prev-btn');
+                    const mobilePrevBtn = document.getElementById('import-history-mobile-prev-btn');
+
+                    // Next page buttons
+                    const nextBtn = document.getElementById('import-history-next-btn');
+                    const mobileNextBtn = document.getElementById('import-history-mobile-next-btn');
+
+                    // Page input and go button
+                    const pageInput = document.getElementById('import-history-page-input');
+                    const goBtn = document.getElementById('import-history-page-go-btn');
+
+                    // Disable/enable buttons based on current page
+                    if (current <= 1) {
+                        if (prevBtn) prevBtn.disabled = true;
+                        if (mobilePrevBtn) mobilePrevBtn.disabled = true;
+                        if (prevBtn) prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        if (mobilePrevBtn) mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                    } else {
+                        if (prevBtn) {
+                            prevBtn.disabled = false;
+                            prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            prevBtn.onclick = () => {
+                                loadImportHistory(current - 1);
+                            };
+                        }
+                        if (mobilePrevBtn) {
+                            mobilePrevBtn.disabled = false;
+                            mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobilePrevBtn.onclick = () => {
+                                loadImportHistory(current - 1);
+                            };
+                        }
+                    }
+
+                    if (current >= pages) {
+                        if (nextBtn) nextBtn.disabled = true;
+                        if (mobileNextBtn) mobileNextBtn.disabled = true;
+                        if (nextBtn) nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                        if (mobileNextBtn) mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                    } else {
+                        if (nextBtn) {
+                            nextBtn.disabled = false;
+                            nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            nextBtn.onclick = () => {
+                                loadImportHistory(current + 1);
+                            };
+                        }
+                        if (mobileNextBtn) {
+                            mobileNextBtn.disabled = false;
+                            mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                            mobileNextBtn.onclick = () => {
+                                loadImportHistory(current + 1);
+                            };
+                        }
+                    }
+
+                    // Page input and go button
+                    if (pageInput && goBtn) {
+                        goBtn.onclick = () => {
+                            const page = parseInt(pageInput.value);
+                            if (!isNaN(page) && page >= 1 && page <= pages) {
+                                loadImportHistory(page);
+                            } else {
+                                showToast('请输入有效的页码', false);
+                            }
+                        };
+
+                        // Enter key support
+                        pageInput.onkeyup = (event) => {
+                            if (event.key === 'Enter') {
+                                const page = parseInt(pageInput.value);
+                                if (!isNaN(page) && page >= 1 && page <= pages) {
+                                    loadImportHistory(page);
+                                } else {
+                                    showToast('请输入有效的页码', false);
+                                }
+                            }
+                        };
+                    }
+                }, 0);
+            }
+
+            // Make functions available globally for inline handlers
+            window.showDetails = showDetails;
+            window.showMemory = showMemory;
+            window.showCost = showCost;
+            window.closeDetailModal = closeDetailModal;
+            window.closeMemoryModal = closeMemoryModal;
+            window.closeCostModal = closeCostModal;
+            window.showCostDetail = showCostDetail;
+            window.closeCostDetailModal = closeCostDetailModal;
+            window.loadConversations = loadConversations;
+            window.showImportModal = showImportModal;
+            window.closeImportModal = closeImportModal;
+            window.downloadTemplate = downloadTemplate;
+            window.handleImportFileSelect = handleImportFileSelect;
+            window.confirmImport = confirmImport;
+            window.showConfirmImportModal = showConfirmImportModal;
+            window.closeConfirmImportModal = closeConfirmImportModal;
+            window.proceedWithImport = proceedWithImport;
+            window.showImportHistoryModal = showImportHistoryModal;
+            window.closeImportHistoryModal = closeImportHistoryModal;
+
+            // 弹窗可调整大小功能
+            function initializeResizableAreas() {
+                // 为所有可调整大小的区域添加事件监听器
+                document.querySelectorAll('.resizable-area').forEach(area => {
+                    // 使用ResizeObserver监听尺寸变化
+                    const resizeObserver = new ResizeObserver(entries => {
+                        for (let entry of entries) {
+                            updateModalSize(entry.target);
+                        }
+                    });
+
+                    resizeObserver.observe(area);
+                });
+            }
+
+            function updateModalSize(resizableArea) {
+                // 查找包含该区域的弹窗
+                const modal = resizableArea.closest('.modal');
+                if (!modal) return;
+
+                const modalContent = modal.querySelector('.inline-block');
+                if (!modalContent) return;
+
+                // 获取当前尺寸
+                const areaRect = resizableArea.getBoundingClientRect();
+
+                // 计算弹窗的新尺寸
+                const paddingWidth = 80; // 弹窗水平内边距总和
+                const paddingHeight = 40; // 弹窗垂直内边距总和
+                const headerFooterHeight = 160; // 弹窗头部和底部高度总和
+
+                const newModalHeight = areaRect.height + headerFooterHeight + paddingHeight;
+                const newModalWidth = areaRect.width + paddingWidth;
+
+                // 设置最小和最大尺寸限制
+                const minWidth = 500;
+                const minHeight = 300;
+                const maxWidth = window.innerWidth * 0.95;
+                const maxHeight = window.innerHeight * 0.95;
+
+                // 计算最终尺寸
+                const finalWidth = Math.max(minWidth, Math.min(newModalWidth, maxWidth));
+                const finalHeight = Math.max(minHeight, Math.min(newModalHeight, maxHeight));
+
+                // 应用新的尺寸
+                modalContent.style.width = finalWidth + 'px';
+                modalContent.style.height = finalHeight + 'px';
+
+                // 确保弹窗居中
+                modalContent.style.marginLeft = 'auto';
+                modalContent.style.marginRight = 'auto';
+            }
+
+            // 在页面加载完成后初始化可调整大小功能
+            document.addEventListener('DOMContentLoaded', function() {
+                // 延迟初始化，确保DOM元素都已创建
+                setTimeout(initializeResizableAreas, 100);
+            });
+        });
+    </script>
+</div>
+</html>
