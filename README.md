@@ -4,11 +4,11 @@
 ## 快速开始
 1.在项目的pom.xml引入如下依赖
 ```xml
-        <dependency>
-            <groupId>com.tortoise.core</groupId>
-            <artifactId>tortoise-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
+     <dependency>
+        <groupId>io.github.johntortoise</groupId>
+        <artifactId>tortoise-core</artifactId>
+        <version>1.0</version>
+     </dependency>
 ```
 2.创建TortoiseClient并调用
 ```java
@@ -483,11 +483,28 @@ spring.datasource.url
 spring.datasource.username
 spring.datasource.password
 
-启动项目后，访问localhost:8080接口，即可来到登录页面
+## 启动
+在启动之前，请先检查.env文件的配置
+通常你需要对这几项进行修改
+SPRING_DATASOURCE_HOST=192.168.3.11
+SPRING_DATASOURCE_PORT=3306
+SPRING_DATASOURCE_DATABASE=db_tortoise
+SPRING_DATASOURCE_USERNAME=root
+SPRING_DATASOURCE_PASSWORD=usiytvsiid5843
+
+
+本地启动
+cd tortoise-admin
+start-app
+
+访问:http://localhost:8080/login
+
+docker启动
+cd tortoise-admin
+docker-compose up -d
+访问:http://ip:8080/login
+
 默认账号是admin@gmail.com，密码123456，如要修改，请查看init-dml.sql文件，或者在登录后，右上角点击个人信息即可输入密码修改
-
-
-
 
 ### 4.1 大模型配置页面
 

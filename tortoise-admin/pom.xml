@@ -148,7 +148,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>io.github.johntortoise.admin.TortoiseWebApplication</mainClass>
+                    <mainClass>io.github.johntortoise.TortoiseWebApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
