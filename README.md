@@ -87,14 +87,14 @@ public class QuickStartDemo {
         firstMessage.setConversationId(conversationId);
 
         ChatCompletionResponse firstResponse = tortoiseClient.chat(firstMessage, model);
-        System.out.println("第一次回复：" + firstResponse.getChoices().get(0).getMessage().getContent());
+        System.out.println("第一次回复：" + firstResponse.getChoices()[0].getMessage().getContent());
 
         // 4. 发送第二条消息（系统会自动维护对话历史）
         TortoiseMessage secondMessage = new TortoiseMessage("我叫什么名字，直接告诉我");
         secondMessage.setConversationId(conversationId);
 
         ChatCompletionResponse secondResponse = tortoiseClient.chat(secondMessage, model);
-        System.out.println("第二次回复：" + secondResponse.getChoices().get(0).getMessage().getContent());
+        System.out.println("第二次回复：" + secondResponse.getChoices()[0].getMessage().getContent());
     }
 }
 ```
@@ -912,6 +912,7 @@ public class Test {
     }
 }
 ```
+
 看一下demo运行后的对话内容
 
 ![历史会话页面](docs/img/conversation-4.png)
