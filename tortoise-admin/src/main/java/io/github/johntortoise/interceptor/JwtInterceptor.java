@@ -36,17 +36,24 @@ public class JwtInterceptor implements HandlerInterceptor {
             return false;
         }
         
-        
+
         String token = request.getHeader("Authorization");
-        
-        
+
+        // 如果header中没有token，尝试从URL参数获取（用于SSE连接）
+        if (token == null) {
+            token = request.getParameter("token");
+            if (token != null && !token.startsWith("Bearer ")) {
+                token = "Bearer " + token;
+            }
+        }
+
         if (token == null || !token.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"success\":false,\"message\":\"未提供有效的认证令牌\"}");
             return false;
         }
-        
-        
+
+
         token = token.substring(7);
         
         

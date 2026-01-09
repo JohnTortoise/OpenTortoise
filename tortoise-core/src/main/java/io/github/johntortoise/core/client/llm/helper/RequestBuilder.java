@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.johntortoise.core.consts.HTTPConst;
 import io.github.johntortoise.core.dto.model.ChatCompletionRequest;
 import io.github.johntortoise.core.dto.model.Message;
+import io.github.johntortoise.core.dto.model.Tool;
 import io.github.johntortoise.core.enums.ErrorCodeEnum;
 import io.github.johntortoise.core.exceptions.TortoiseBusinessException;
 import io.github.johntortoise.core.utils.LogUtil;
@@ -30,28 +31,43 @@ public class RequestBuilder {
     }
 
     public Request buildChatRequest(List<Message> messages, boolean stream, String conversationId) {
+        return buildChatRequest(messages,stream,conversationId,null);
+    }
+
+    public Request buildChatRequest(List<Message> messages, boolean stream, String conversationId,List<Tool> tools){
+        String body = generateBody(messages, stream, tools);
+        return buildChatRequest(body,conversationId);
+    }
+
+
+    public Request buildChatRequest(String body,String conversationId){
         try {
 
-            ChatCompletionRequest requestBody = new ChatCompletionRequest(
-                    modelName, messages, this.temperature, stream, stream
-            );
-
-            String messagesStr = objectMapper.writeValueAsString(requestBody);
-
             Request request= new Request.Builder()
-                        .url(completeUrl)
-                        .post(RequestBody.create(messagesStr, MediaType.parse(HTTPConst.APPLICATION_JSON)))
-                        .header(HTTPConst.CONTENT_TYPE, HTTPConst.APPLICATION_JSON)
-                        .header(HTTPConst.AUTHORIZATION, HTTPConst.BEARER + apiKey)
-                        .build();
+                    .url(completeUrl)
+                    .post(RequestBody.create(body, MediaType.parse(HTTPConst.APPLICATION_JSON)))
+                    .header(HTTPConst.CONTENT_TYPE, HTTPConst.APPLICATION_JSON)
+                    .header(HTTPConst.AUTHORIZATION, HTTPConst.BEARER + apiKey)
+                    .build();
 
             LogUtil.info("[tortoise-llmReq] conversationId={} | Url={} | Body={}",
-                    conversationId, completeUrl, messagesStr);
+                    conversationId, completeUrl, body);
 
             return request;
         }catch (Exception e){
             LogUtil.error("buildChatRequest error",e);
             throw new TortoiseBusinessException(ErrorCodeEnum.UNKNOWN_ERROR,e.getMessage());
+        }
+    }
+
+    public String generateBody(List<Message> messages, boolean stream, List<Tool> tools){
+        try {
+            ChatCompletionRequest requestBody = new ChatCompletionRequest(
+                    modelName, messages, this.temperature, stream, stream,tools
+            );
+            return objectMapper.writeValueAsString(requestBody);
+        }catch (Exception e){
+            throw new RuntimeException(e);
         }
     }
 }

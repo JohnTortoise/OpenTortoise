@@ -43,10 +43,10 @@ public class TortoiseChatProfile {
 
     private Long createUserId;
 
-    @NotNull(message = "每个会话允许的单日token消耗数")
+    @NotNull(message = "单日单会话token上限")
     private Long dailyTokenLimitConversation;
 
-    @NotNull(message = "每个聊天配置允许的单日token消耗数")
+    @NotNull(message = "单日总token上限")
     private Long dailyTokenLimitTotal;
 
 

@@ -114,15 +114,23 @@
                                 <label for="user-form-role" class="block text-sm font-semibold text-gray-700 mb-2">
                                     角色 <span class="text-red-500">*</span>
                                 </label>
-                                <select id="user-form-role" required class="input-modern w-full">
-                                    <option value="">请选择角色</option>
-                                    <option value="0">消费者</option>
-                                    <option value="1">超级管理员</option>
-                                    <option value="2">开发</option>
-                                    <option value="3">测试</option>
-                                    <option value="4">产品</option>
-                                    <option value="5">运营</option>
-                                </select>
+                                <div class="relative mt-1">
+                                    <input type="text" id="user-form-role-input"
+                                           placeholder="请选择角色"
+                                           class="input-modern w-full cursor-pointer"
+                                           readonly>
+                                    <div id="user-form-role-dropdown"
+                                         class="absolute z-50 mt-1 w-full bg-white shadow-xl rounded-lg py-2 text-sm border border-gray-200 focus:outline-none hidden hide-scrollbar"
+                                         style="box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);">
+                                        <div class="search-dropdown-item" data-value="0">消费者</div>
+                                        <div class="search-dropdown-item" data-value="1">超级管理员</div>
+                                        <div class="search-dropdown-item" data-value="2">开发</div>
+                                        <div class="search-dropdown-item" data-value="3">测试</div>
+                                        <div class="search-dropdown-item" data-value="4">产品</div>
+                                        <div class="search-dropdown-item" data-value="5">运营</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="user-form-role" required>
                             </div>
                         </div>
                     </form>
@@ -188,6 +196,7 @@
             // 初始化函数
             function doInit() {
                 initElements();
+                setupRoleDropdown();
                 const pageElement = document.getElementById('user-management-page');
                 if (pageElement && pageElement.classList.contains('active-page')) {
                     isPageActive = true;
@@ -276,18 +285,30 @@
                         return response.json();
                     })
                     .then(data => {
-                        if (data.success && data.data) {
-                            renderUsersTable(data.data);
-                            renderPagination(data.data);
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                // code不是200，错误已在handleApiResponse中处理
+                                throw new Error(data.msg || '加载用户列表失败');
+                            }
+                        }
+                        
+                        // 兼容旧格式或处理数据
+                        if (actualData && (actualData.records || actualData.data)) {
+                            const pageData = actualData.records ? actualData : actualData.data;
+                            renderUsersTable(pageData);
+                            renderPagination(pageData);
                         } else {
-                            const errorMsg = data.message || '加载用户列表失败';
-                            showToast(errorMsg, false);
+                            // 数据为空或格式不正确
                             if (usersTableBody) {
                                 usersTableBody.innerHTML = `
                                     <tr>
                                         <td colspan="6" class="px-6 py-8 text-center">
                                             <div class="empty-state">
-                                                <p class="text-lg font-medium text-gray-600">${errorMsg}</p>
+                                                <p class="text-lg font-medium text-gray-600">暂无数据</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -296,7 +317,7 @@
                         }
                     })
                     .catch(error => {
-                        showToast('加载用户列表失败: ' + error.message, false);
+                        // 错误消息已在handleApiResponse中显示toast，这里只处理UI
                         if (usersTableBody) {
                             usersTableBody.innerHTML = `
                                 <tr>
@@ -432,6 +453,11 @@
                 userForm.reset();
                 const formId = document.getElementById('user-form-id');
                 if (formId) formId.value = '';
+
+                // 重置角色下拉框
+                document.getElementById('user-form-role-input').value = '';
+                document.getElementById('user-form-role').value = '';
+
                 const formPassword = document.getElementById('user-form-password');
                 if (formPassword) {
                     formPassword.value = '';
@@ -448,6 +474,43 @@
                 document.body.style.overflow = 'hidden';
             }
             
+            function setupRoleDropdown() {
+                const roleInput = document.getElementById('user-form-role-input');
+                const roleDropdown = document.getElementById('user-form-role-dropdown');
+                const roleHidden = document.getElementById('user-form-role');
+
+                // 初始化默认值（空）
+                roleInput.value = '';
+                roleHidden.value = '';
+
+                // 输入框点击时显示下拉菜单
+                roleInput.onclick = function() {
+                    showDropdown(roleDropdown);
+                };
+
+                // 点击其他地方关闭下拉
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('#user-form-role-input') && !e.target.closest('#user-form-role-dropdown')) {
+                        hideDropdown(roleDropdown);
+                    }
+                });
+
+                // 处理下拉选项点击
+                roleDropdown.addEventListener('click', function(e) {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item) {
+                        const value = item.getAttribute('data-value');
+                        const text = item.textContent;
+
+                        roleInput.value = text;
+                        roleHidden.value = value;
+                        hideDropdown(roleDropdown);
+                    }
+                });
+            }
+
+            // showDropdown 和 hideDropdown 函数已在 layout.html 中定义，这里移除重复定义
+
             function editUser(id, email, roleCode) {
                 initElements(); // 确保元素已初始化
                 if (!userModal || !userForm) {
@@ -458,8 +521,12 @@
                 if (formId) formId.value = id;
                 const formEmail = document.getElementById('user-form-email');
                 if (formEmail) formEmail.value = email;
-                const formRole = document.getElementById('user-form-role');
-                if (formRole) formRole.value = roleCode;
+
+                // 设置角色下拉框的值和显示文本
+                const roleText = getRoleText(roleCode);
+                document.getElementById('user-form-role-input').value = roleText;
+                document.getElementById('user-form-role').value = roleCode;
+
                 const formPassword = document.getElementById('user-form-password');
                 if (formPassword) {
                     formPassword.value = '';
@@ -475,6 +542,19 @@
                 // 防止背景滚动
                 document.body.style.overflow = 'hidden';
             }
+
+            // 获取角色文本的辅助函数
+            function getRoleText(roleCode) {
+                const roleMap = {
+                    '0': '消费者',
+                    '1': '超级管理员',
+                    '2': '开发',
+                    '3': '测试',
+                    '4': '产品',
+                    '5': '运营'
+                };
+                return roleMap[roleCode] || '未知角色';
+            }
             
             function deleteUser(userId) {
                 if (!confirm('确定要删除此用户吗？')) {
@@ -485,17 +565,40 @@
                 authenticatedFetch(`/api/user/delete?${params.toString()}`, {
                     method: 'POST'
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        if (data.success) {
-                            showToast('删除成功', true);
-                            loadUsers(currentPage);
+                        // 处理TortoiseBaseResult格式
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                showToast(data.msg || '删除成功', true);
+                                loadUsers(currentPage);
+                            } else {
+                                // code不是200，错误已在handleApiResponse中处理，但这里也要显示成功消息
+                                if (data.code !== 500) {
+                                    showToast(data.msg || '删除成功', true);
+                                    loadUsers(currentPage);
+                                }
+                            }
                         } else {
-                            showToast(data.message || '删除失败', false);
+                            // 兼容旧格式
+                            if (data.success) {
+                                showToast('删除成功', true);
+                                loadUsers(currentPage);
+                            } else {
+                                showToast(data.message || '删除失败', false);
+                            }
                         }
                     })
                     .catch(error => {
-                        showToast('删除失败，请稍后重试', false);
+                        // 错误消息已在handleApiResponse中显示toast，这里不再重复
+                        if (!error.message || error.message.includes('HTTP')) {
+                            showToast('删除失败，请稍后重试', false);
+                        }
                     });
             };
             
@@ -551,19 +654,45 @@
                         return response.json();
                     })
                     .then(data => {
-                        if (data.success) {
-                            showToast(data.message || '保存成功', true);
-                            // 延迟关闭弹窗，让toast有时间显示
-                            setTimeout(() => {
-                                closeUserModal();
-                                loadUsers(currentPage);
-                            }, 300);
+                        // 处理TortoiseBaseResult格式
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                showToast(data.msg || '保存成功', true);
+                                // 延迟关闭弹窗，让toast有时间显示
+                                setTimeout(() => {
+                                    closeUserModal();
+                                    loadUsers(currentPage);
+                                }, 300);
+                            } else {
+                                // code不是200，错误已在handleApiResponse中处理
+                                // 但如果code不是500，可能也是成功的
+                                if (data.code !== 500) {
+                                    showToast(data.msg || '保存成功', true);
+                                    setTimeout(() => {
+                                        closeUserModal();
+                                        loadUsers(currentPage);
+                                    }, 300);
+                                }
+                            }
                         } else {
-                            showToast(data.message || '保存失败', false);
+                            // 兼容旧格式
+                            if (data.success) {
+                                showToast(data.message || '保存成功', true);
+                                // 延迟关闭弹窗，让toast有时间显示
+                                setTimeout(() => {
+                                    closeUserModal();
+                                    loadUsers(currentPage);
+                                }, 300);
+                            } else {
+                                showToast(data.message || '保存失败', false);
+                            }
                         }
                     })
                     .catch(error => {
-                        showToast('保存失败，请稍后重试', false);
+                        // 错误消息已在handleApiResponse中显示toast，这里不再重复
+                        if (!error.message || error.message.includes('HTTP')) {
+                            showToast('保存失败，请稍后重试', false);
+                        }
                     })
                     .finally(() => {
                         saveUserBtn.disabled = false;

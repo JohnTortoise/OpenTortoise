@@ -1,8 +1,10 @@
 package io.github.johntortoise.core.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.johntortoise.core.consts.HTTPConst;
+import io.github.johntortoise.core.dto.sys.HeadersDTO;
 import io.github.johntortoise.core.enums.ErrorCodeEnum;
 import io.github.johntortoise.core.exceptions.TortoiseBusinessException;
 import lombok.Data;
@@ -10,125 +12,72 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Data
 public class BaseHttpClient {
 
     protected final OkHttpClient client;
-    protected final String baseUrl;
     protected final ObjectMapper objectMapper;
-    protected final String sk;
-    protected final String skHeaderName;
 
-    public BaseHttpClient(OkHttpClient client, String baseUrl, String sk) {
+    public BaseHttpClient(OkHttpClient client) {
         this.client = client;
-        this.baseUrl = baseUrl;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.sk = sk;
-        this.skHeaderName = HTTPConst.X_API_KEY;
     }
 
-
-    protected Request.Builder createRequestBuilder() {
-        Request.Builder builder = new Request.Builder();
-        if (sk != null && !sk.trim().isEmpty()) {
-            builder.header(skHeaderName, sk);
-        }
-        return builder;
-    }
-
-
-    protected <T> T doGet(String path, Class<T> responseType) throws IOException {
-        return doGet(path, null, responseType);
-    }
-
-
-    protected <T> T doGet(String path, HttpUrl.Builder urlBuilder, Class<T> responseType) {
+    protected <T> T doGet(String url, Map<String,String> params,Map<String,String> headers,Class<T> responseType){
         try {
-            HttpUrl url = (urlBuilder != null) ? urlBuilder.build() :
-                    HttpUrl.parse(baseUrl + path);
+            HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
+            if(EmptyUtil.isNotEmpty(params)){
+                params.forEach(urlBuilder::addQueryParameter);
+            }
+            Request.Builder requestBuilder = new Request.Builder();
 
-            Request request = createRequestBuilder()
-                    .url(url)
-                    .get()
-                    .build();
+            if(EmptyUtil.isNotEmpty(headers)){
+                headers.forEach(requestBuilder::header);
+            }
 
-            return executeRequest(request, responseType);
-        } catch (Exception e) {
-            LogUtil.error("调用GET请求异常: " + path, e);
+            Request request = requestBuilder.url(urlBuilder.build()).build();
+            return executeRequest(request,responseType);
+        }catch (Exception e){
+            LogUtil.error("调用GET请求异常:{} ",url,e);
             throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, e.getMessage());
         }
     }
 
-
-    protected <T> T doGet(String path, HttpUrl.Builder urlBuilder, Type responseType) {
+    protected <T> T doPost(String url, Object params,Map<String,String> headers,Class<T> responseType){
         try {
-            HttpUrl url = (urlBuilder != null) ? urlBuilder.build() :
-                    HttpUrl.parse(baseUrl + path);
-
-            Request request = createRequestBuilder()
-                    .url(url)
-                    .get()
-                    .build();
-
-            return executeRequest(request, responseType);
-        } catch (Exception e) {
-            LogUtil.error("调用GET请求异常: " + path, e);
-            throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, e.getMessage());
-        }
-    }
+            HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
+            Request.Builder requestBuilder = new Request.Builder();
+            headers.forEach(requestBuilder::header);
 
 
-    protected <T> T doPost(String path, Object requestBody, Class<T> responseType) {
-        try {
-            String json = objectMapper.writeValueAsString(requestBody);
+            String requestBodyJson;
+            if (params instanceof String) {
+                String strParam = (String) params;
+                validateJsonFormat(strParam);
+                requestBodyJson = strParam;
+            } else {
+                requestBodyJson = objectMapper.writeValueAsString(params);
+            }
+
             RequestBody body = RequestBody.create(
-                    json,
-                    MediaType.parse("application/json; charset=utf-8")
-            );
+                    requestBodyJson,
+                    MediaType.parse("application/json; charset=utf-8"));
 
-            Request request = createRequestBuilder()
-                    .url(baseUrl + path)
-                    .post(body)
-                    .build();
 
-            return executeRequest(request, responseType);
-        } catch (Exception e) {
-            LogUtil.error("调用POST请求异常: " + path, e);
+
+            Request request = requestBuilder.url(urlBuilder.build()).post(body).build();
+            return executeRequest(request,responseType);
+        }catch (Exception e){
+            LogUtil.error("调用POST请求异常:{} ",url,e);
             throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, e.getMessage());
         }
     }
 
-
-    protected void doPost(String path, Object requestBody) {
-        try {
-            String json = objectMapper.writeValueAsString(requestBody);
-            RequestBody body = RequestBody.create(
-                    json,
-                    MediaType.parse("application/json; charset=utf-8")
-            );
-
-            Request request = createRequestBuilder()
-                    .url(baseUrl + path)
-                    .post(body)
-                    .build();
-
-            executeRequest(request);
-        } catch (Exception e) {
-            LogUtil.error("调用POST请求异常: " + path, e);
-            throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, e.getMessage());
-        }
-    }
-
-
-    protected Request.Builder createRequestBuilderWithHeaders(Headers headers) {
-        Request.Builder builder = createRequestBuilder();
-        if (headers != null) {
-            builder.headers(headers);
-        }
-        return builder;
-    }
 
 
     private <T> T executeRequest(Request request, Class<T> responseType) throws IOException {
@@ -151,36 +100,12 @@ public class BaseHttpClient {
         }
     }
 
-
-    private <T> T executeRequest(Request request, Type responseType) throws IOException {
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new RuntimeException("请求失败，状态码: " + response.code() +
-                        ", 响应: " + (response.body() != null ? response.body().string() : "null"));
-            }
-
-            ResponseBody responseBody = response.body();
-            if (responseBody != null) {
-                String responseJson = responseBody.string();
-                return objectMapper.readValue(responseJson, objectMapper.getTypeFactory().constructType(responseType));
-            } else {
-                throw new RuntimeException("响应体为空");
-            }
+    private void validateJsonFormat(String jsonStr){
+        try {
+            objectMapper.readTree(jsonStr);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("传入的字符串不是合法的JSON格式：" + jsonStr, e);
         }
     }
 
-
-    private void executeRequest(Request request) throws IOException {
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new RuntimeException("请求失败，状态码: " + response.code() +
-                        ", 响应: " + (response.body() != null ? response.body().string() : "null"));
-            }
-        }
-    }
-
-
-    protected HttpUrl.Builder buildUrl(String path) {
-        return HttpUrl.parse(baseUrl + path).newBuilder();
-    }
 }

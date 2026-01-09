@@ -144,10 +144,31 @@
                 profileContent.classList.add('hidden');
                 
                 authenticatedFetch('/api/user/profile')
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        if (data.success && data.data) {
-                            const user = data.data;
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        let user = null;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                                user = actualData.data || actualData;
+                            } else {
+                                throw new Error(data.msg || '加载用户信息失败');
+                            }
+                        } else {
+                            // 兼容旧格式
+                            if (data.success && data.data) {
+                                user = data.data;
+                            }
+                        }
+                        
+                        if (user) {
                             originalData = { ...user };
                             
                             document.getElementById('user-id').value = user.id || '';
@@ -160,7 +181,7 @@
                             profileLoading.classList.add('hidden');
                             profileContent.classList.remove('hidden');
                         } else {
-                            showToast(data.message || '加载用户信息失败', false);
+                            showToast('加载用户信息失败', false);
                             profileLoading.classList.add('hidden');
                         }
                     })
@@ -191,13 +212,33 @@
                     method: 'POST',
                     body: JSON.stringify(updateData)
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        if (data.success) {
-                            showToast('保存成功', true);
-                            loadProfile();
+                        // 处理TortoiseBaseResult格式
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                showToast(data.msg || '保存成功', true);
+                                loadProfile();
+                            } else {
+                                // 错误已在handleApiResponse中处理
+                                if (data.code !== 500) {
+                                    showToast(data.msg || '保存成功', true);
+                                    loadProfile();
+                                }
+                            }
                         } else {
-                            showToast(data.message || '保存失败', false);
+                            // 兼容旧格式
+                            if (data.success) {
+                                showToast('保存成功', true);
+                                loadProfile();
+                            } else {
+                                showToast(data.message || '保存失败', false);
+                            }
                         }
                     })
                     .catch(error => {

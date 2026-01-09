@@ -13,7 +13,8 @@ public interface TortoiseChatProfileService extends IService<TortoiseChatProfile
 
     
     Page<TortoiseChatProfile> page(String name, Long current,
-                                   Long size);
+                                   Long size,Boolean enable);
+
     
     void addOrUpdate(TortoiseChatProfile tortoiseChatProfile);
 

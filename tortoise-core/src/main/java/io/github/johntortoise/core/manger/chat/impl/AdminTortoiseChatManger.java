@@ -3,7 +3,10 @@ package io.github.johntortoise.core.manger.chat.impl;
 
 import io.github.johntortoise.admin.TortoiseAdminClient;
 import io.github.johntortoise.core.dto.model.Message;
+import io.github.johntortoise.core.dto.model.ToolCall;
 import io.github.johntortoise.core.dto.sys.AfterChatDTO;
+import io.github.johntortoise.core.dto.sys.LLmInvokeResp;
+import io.github.johntortoise.core.dto.sys.ToolCallDTO;
 import io.github.johntortoise.core.manger.chat.TortoiseChatManger;
 
 import java.util.List;
@@ -25,6 +28,12 @@ public class AdminTortoiseChatManger implements TortoiseChatManger {
     public void afterChat(AfterChatDTO afterChatDTO) {
         tortoiseAdminClient.afterChat(afterChatDTO);
     }
+
+    @Override
+    public String toolCallInvoke(ToolCallDTO toolCallDTO) {
+        return tortoiseAdminClient.callTool(toolCallDTO.getName(),toolCallDTO.getArguments());
+    }
+
 
     @Override
     public Boolean checkLimit(String conversationId) {

@@ -31,6 +31,8 @@ public class ChatChunk {
     @JsonProperty("usage")
     private Usage usage;
 
+
+
     @Data
     @NoArgsConstructor
     public static class Choice {
@@ -40,6 +42,9 @@ public class ChatChunk {
 
         @JsonProperty("index")
         private Integer index;
+
+        @JsonProperty("finish_reason")
+        private String finishReason;
     }
 
     @Data
@@ -51,5 +56,13 @@ public class ChatChunk {
 
         @JsonProperty("role")
         private String role;
+
+        @JsonProperty("reasoning_content")
+        private String reasoningContent;
+
+
+        @JsonProperty("tool_calls")
+        private List<ToolCall> toolCalls;
+
     }
 }

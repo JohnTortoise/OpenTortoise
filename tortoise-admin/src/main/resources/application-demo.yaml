@@ -1,0 +1,93 @@
+spring:
+  application:
+    name: tortoise-web
+
+  datasource:
+    host: ${SPRING_DATASOURCE_HOST}
+    port: ${SPRING_DATASOURCE_PORT}
+    database: ${SPRING_DATASOURCE_DATABASE}
+    url: jdbc:mysql://${spring.datasource.host}:${spring.datasource.port}/${spring.datasource.database}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DATASOURCE_MAX_POOL_SIZE}
+      minimum-idle: ${DATASOURCE_MIN_IDLE}
+      idle-timeout: ${DATASOURCE_IDLE_TIMEOUT}
+      max-lifetime: ${DATASOURCE_MAX_LIFETIME}
+      connection-timeout: ${DATASOURCE_CONNECTION_TIMEOUT}
+
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:false}
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    mode: HTML5
+
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE}
+      max-request-size: ${MAX_REQUEST_SIZE}
+
+server:
+  port: ${SERVER_PORT}
+  servlet:
+    context-path: ${SERVER_CONTEXT_PATH}
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: io.github.johntortoise.web.model
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    default-executor-type: batch
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT}
+    io.github.johntortoise: ${LOG_LEVEL_APP}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+temp:
+  file:
+    path: ${TEMP_FILE_PATH}
+
+# 线程池配置
+thread-pool:
+  common:
+    core-pool-size: ${COMMON_CORE_POOL_SIZE}
+    max-pool-size: ${COMMON_MAX_POOL_SIZE}
+    queue-capacity: ${COMMON_QUEUE_CAPACITY}
+    keep-alive-seconds: ${COMMON_KEEP_ALIVE_SECONDS}
+    await-termination-seconds: ${COMMON_AWAIT_TERMINATION_SECONDS}
+
+  after-chat:
+    core-pool-size: ${AFTER_CHAT_CORE_POOL_SIZE}
+    max-pool-size: ${AFTER_CHAT_MAX_POOL_SIZE}
+    queue-capacity: ${AFTER_CHAT_QUEUE_CAPACITY}
+    keep-alive-seconds: ${AFTER_CHAT_KEEP_ALIVE_SECONDS}
+    await-termination-seconds: ${AFTER_CHAT_AWAIT_TERMINATION_SECONDS}
+    thread-name-prefix: ${AFTER_CHAT_THREAD_PREFIX}
+
+  import-conversation:
+    core-pool-size: ${IMPORT_CONVERSATION_CORE_POOL_SIZE}
+    max-pool-size: ${IMPORT_CONVERSATION_MAX_POOL_SIZE}
+    queue-capacity: ${IMPORT_CONVERSATION_QUEUE_CAPACITY}
+    keep-alive-seconds: ${IMPORT_CONVERSATION_KEEP_ALIVE_SECONDS}
+    await-termination-seconds: ${IMPORT_CONVERSATION_AWAIT_TERMINATION_SECONDS}
+    thread-name-prefix: ${IMPORT_CONVERSATION_THREAD_PREFIX}
+
+  batch-refresh-memory:
+    core-pool-size: ${BATCH_REFRESH_MEMORY_CORE_POOL_SIZE}
+    max-pool-size: ${BATCH_REFRESH_MEMORY_MAX_POOL_SIZE}
+    queue-capacity: ${BATCH_REFRESH_MEMORY_QUEUE_CAPACITY}
+    keep-alive-seconds: ${BATCH_REFRESH_MEMORY_KEEP_ALIVE_SECONDS}
+    await-termination-seconds: ${BATCH_REFRESH_MEMORY_AWAIT_TERMINATION_SECONDS}
+    thread-name-prefix: ${BATCH_REFRESH_MEMORY_THREAD_PREFIX}

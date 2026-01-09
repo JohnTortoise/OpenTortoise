@@ -8,4 +8,6 @@ public interface StreamCallBack{
     void finish();
 
     void onFailure();
+
+    void tortoiseMsg(String content);
 }

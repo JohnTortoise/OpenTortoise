@@ -52,7 +52,7 @@ public class TortoiseChatProfileServiceImpl extends ServiceImpl<TortoiseChatProf
 
 
     @Override
-    public Page<TortoiseChatProfile> page(String name, Long current, Long size) {
+    public Page<TortoiseChatProfile> page(String name, Long current, Long size,Boolean enable) {
         if (current == null || current < 1) {
             current = 1L;
         }
@@ -65,6 +65,13 @@ public class TortoiseChatProfileServiceImpl extends ServiceImpl<TortoiseChatProf
                 .orderByDesc(TortoiseChatProfile::getUpdateTime);
         if (EmptyUtil.isNotEmpty(name)) {
             queryWrapper.like(TortoiseChatProfile::getName, name);
+        }
+        if(EmptyUtil.isNotEmpty(enable)){
+            if(enable){
+                queryWrapper.eq(TortoiseChatProfile::getStatus,EnabelEnum.OPEN.getCode());
+            }else {
+                queryWrapper.eq(TortoiseChatProfile::getStatus,EnabelEnum.CLOSE.getCode());
+            }
         }
         return this.baseMapper.selectPage(new Page<>(current, size), queryWrapper);
     }
@@ -93,6 +100,7 @@ public class TortoiseChatProfileServiceImpl extends ServiceImpl<TortoiseChatProf
                     .sk(tortoiseChatProfile.getSk())
                     .dailyTokenLimitConversation(tortoiseChatProfile.getDailyTokenLimitConversation())
                     .dailyTokenLimitTotal(tortoiseChatProfile.getDailyTokenLimitTotal())
+                    .status(tortoiseChatProfile.getStatus())
                     .createUserId(TortoiseContext.getCurrentUserId())
                     .isDeleted(DeletedEnum.EXIST.getCode())
                     .createTime(LocalDateTime.now())

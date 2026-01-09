@@ -19,8 +19,9 @@ public class ChatCompletionRequest {
     private BigDecimal temperature;
     private Boolean stream;
     private StreamOptions stream_options;
+    private List<Tool> tools;
 
-    public ChatCompletionRequest(String modelName, List<Message> messages, BigDecimal temperature, boolean stream, boolean includeUsage) {
+    public ChatCompletionRequest(String modelName, List<Message> messages, BigDecimal temperature, boolean stream, boolean includeUsage,List<Tool> tools) {
         StreamOptions streamOptions = new StreamOptions();
         streamOptions.setInclude_usage(includeUsage);
         this.model = modelName;
@@ -28,6 +29,7 @@ public class ChatCompletionRequest {
         this.temperature = temperature;
         this.stream = stream;
         this.stream_options = streamOptions;
+        this.tools = tools;
     }
 
     @Data

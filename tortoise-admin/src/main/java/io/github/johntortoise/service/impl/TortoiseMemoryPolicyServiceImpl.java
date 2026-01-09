@@ -544,12 +544,15 @@ public class TortoiseMemoryPolicyServiceImpl extends ServiceImpl<TortoiseMemoryP
 
 
     public void recordUsage(List<Message> messages, String conversationId, String reply, TortoiseLlmUsageEnum tortoiseLlmUsageEnum){
-        DefaultTortoiseMessageHandler<ChatCompletionResponse> defaultTortoiseMessageHandler = new DefaultTortoiseMessageHandler<>(ChatCompletionResponse.class);
-        AfterChatDTO build = AfterChatDTO.builder()
-                .mainInfo(defaultTortoiseMessageHandler.convertForMainInfo(messages, null, reply, null))
-                .conversationId(conversationId)
-                .build();
-        tortoiseLlmUsageService.recordUsage(build, tortoiseLlmUsageEnum);
+        String req;
+        try {
+            req = ObjectMapperUtil.createObjectMapper().writeValueAsString(messages);
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+
+        TortoiseLlmUsage tortoiseLlmUsage = tortoiseLlmUsageService.generateDetail(req, reply, tortoiseLlmUsageEnum, conversationId);
+        tortoiseLlmUsageService.save(tortoiseLlmUsage);
     }
 
 

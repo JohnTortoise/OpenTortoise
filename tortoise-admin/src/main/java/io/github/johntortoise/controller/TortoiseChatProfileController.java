@@ -1,6 +1,7 @@
 package io.github.johntortoise.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.johntortoise.core.dto.sys.TortoiseBaseResult;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.context.TortoiseContext;
 import io.github.johntortoise.dto.TortoiseLlmConfigDTO;
@@ -27,13 +28,14 @@ public class TortoiseChatProfileController {
 
     
     @GetMapping("/page")
-    public ResponseEntity<Page<TortoiseChatProfile>> page(
+    public TortoiseBaseResult<Page<TortoiseChatProfile>> page(
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long pageNum,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页大小必须大于0") Long pageSize) {
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页大小必须大于0") Long pageSize,
+            @RequestParam(defaultValue = "") Boolean enable) {
         try {
             LogUtil.debug("分页查询聊天配置: name={}, pageNum={}, pageSize={}", name, pageNum, pageSize);
-            return ResponseEntity.ok(tortoiseChatProfileService.page(name, pageNum, pageSize));
+            return TortoiseBaseResult.ok(tortoiseChatProfileService.page(name, pageNum, pageSize,enable));
         } catch (Exception e) {
             LogUtil.error("分页查询聊天配置失败: name={}", name, e);
             throw e;
@@ -42,14 +44,14 @@ public class TortoiseChatProfileController {
 
     
     @PostMapping("addOrUpdate")
-    public ResponseEntity<Void> addOrUpdate(@Valid @RequestBody TortoiseChatProfile tortoiseChatProfile) {
+    public TortoiseBaseResult<Void> addOrUpdate(@Valid @RequestBody TortoiseChatProfile tortoiseChatProfile) {
         try {
             tortoiseChatProfile.setCreateUserId(TortoiseContext.getCurrentUserId());
             LogUtil.info("新增或更新聊天配置: id={}, name={}",
                     tortoiseChatProfile.getId(), tortoiseChatProfile.getName());
             tortoiseChatProfileService.addOrUpdate(tortoiseChatProfile);
             LogUtil.info("新增或更新聊天配置成功: id={}", tortoiseChatProfile.getId());
-            return ResponseEntity.ok().build();
+            return TortoiseBaseResult.ok();
         } catch (Exception e) {
             LogUtil.error("新增或更新聊天配置失败: id={}", tortoiseChatProfile.getId(), e);
             throw e;
@@ -58,11 +60,11 @@ public class TortoiseChatProfileController {
 
     
     @GetMapping("searchModel")
-    public ResponseEntity<List<TortoiseLlmConfigDTO>> searchModel(
+    public TortoiseBaseResult<List<TortoiseLlmConfigDTO>> searchModel(
             @RequestParam("keyword") String keyword) {
         try {
             LogUtil.debug("搜索模型: keyword={}", keyword);
-            return ResponseEntity.ok(tortoiseChatProfileService.searchModel(keyword));
+            return TortoiseBaseResult.ok(tortoiseChatProfileService.searchModel(keyword));
         } catch (Exception e) {
             LogUtil.error("搜索模型失败: keyword={}", keyword, e);
             throw e;
@@ -71,11 +73,11 @@ public class TortoiseChatProfileController {
 
     
     @GetMapping("searchMemoryPolicy")
-    public ResponseEntity<List<TortoiseMemoryPolicyDTO>> searchMemoryPolicy(
+    public TortoiseBaseResult<List<TortoiseMemoryPolicyDTO>> searchMemoryPolicy(
             @RequestParam("keyword") String keyword) {
         try {
             LogUtil.debug("搜索记忆策略: keyword={}", keyword);
-            return ResponseEntity.ok(tortoiseChatProfileService.searchMemoryPolicy(keyword));
+            return TortoiseBaseResult.ok(tortoiseChatProfileService.searchMemoryPolicy(keyword));
         } catch (Exception e) {
             LogUtil.error("搜索记忆策略失败: keyword={}", keyword, e);
             throw e;
@@ -84,14 +86,14 @@ public class TortoiseChatProfileController {
 
     
     @GetMapping("/{id}")
-    public ResponseEntity<TortoiseChatProfile> getById(@PathVariable Long id) {
+    public TortoiseBaseResult<TortoiseChatProfile> getById(@PathVariable Long id) {
         try {
             LogUtil.debug("获取聊天配置详情: id={}", id);
             TortoiseChatProfile profile = tortoiseChatProfileService.getById(id);
             if (profile == null) {
-                return ResponseEntity.notFound().build();
+                return TortoiseBaseResult.fail("查询不到聊天配置");
             }
-            return ResponseEntity.ok(profile);
+            return TortoiseBaseResult.ok(profile);
         } catch (Exception e) {
             LogUtil.error("获取聊天配置详情失败: id={}", id, e);
             throw e;
@@ -100,9 +102,9 @@ public class TortoiseChatProfileController {
 
     
     @GetMapping("refreshMemory")
-    public ResponseEntity<Void> refreshMemory(@RequestParam Long id){
+    public TortoiseBaseResult<Void> refreshMemory(@RequestParam Long id){
         tortoiseChatProfileService.refreshMemory(id);
-        return ResponseEntity.ok(null);
+        return TortoiseBaseResult.ok();
     }
 
 }

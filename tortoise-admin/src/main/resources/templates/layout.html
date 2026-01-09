@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Toast Component -->
     <script src="/js/toast.js"></script>
+    <!-- Pagination Component -->
+    <script src="/js/pagination.js"></script>
     <style>
         .page-container {
             display: none;
@@ -26,12 +28,120 @@
         .nav-item {
             cursor: pointer;
         }
-        
+
         /* 简化的导航激活状态 */
         .nav-item[data-page].active {
             color: #3b82f6;
             background-color: #dbeafe;
             font-weight: 600;
+        }
+
+        /* 导航下拉菜单样式 */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-menu {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px) scale(0.95);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            border-radius: 1rem;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.8),
+                0 20px 25px -5px rgba(59, 130, 246, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            min-width: 220px;
+            padding: 0.75rem 0;
+            margin-top: 0.5rem;
+        }
+
+        .nav-dropdown-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .nav-dropdown-menu::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 1.5rem;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-left: 1px solid rgba(59, 130, 246, 0.1);
+            border-top: 1px solid rgba(59, 130, 246, 0.1);
+            transform: rotate(45deg);
+            border-radius: 2px 0 0 0;
+            z-index: -1;
+        }
+
+        .nav-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1.25rem;
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0.5rem;
+            margin: 0.125rem 0.5rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-dropdown-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(59, 130, 246, 0.08) 50%,
+                transparent 100%);
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-dropdown-item:hover {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            color: #1e40af;
+            transform: translateX(3px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .nav-dropdown-item:hover::before {
+            left: 100%;
+        }
+
+        .nav-dropdown-item i {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav-dropdown-item:hover i {
+            color: #3b82f6;
+            transform: scale(1.1);
+        }
+
+        .nav-dropdown-item span {
+            flex: 1;
+            line-height: 1.4;
         }
 
         .modal {
@@ -924,18 +1034,31 @@
             overscroll-behavior-y: contain;
         }
 
-        #config-modal .modal-content::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
-
         /* 优化弹窗内表单元素的滚动性能 */
         #config-modal .smooth-scroll {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-y: contain;
             will-change: scroll-position;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
         }
-        
+
+        #config-modal .smooth-scroll::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        /* 记忆策略弹窗滚动区域隐藏滚动条 */
+        #strategy-modal .smooth-scroll::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        #strategy-modal .smooth-scroll {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
         /* 记忆策略弹窗隐藏滚动条 */
         #strategy-modal .modal-content::-webkit-scrollbar {
             width: 0px;
@@ -947,6 +1070,99 @@
             -ms-overflow-style: none; /* IE and Edge */
         }
         
+        /* 工具管理弹窗优化滚动性能 - 隐藏滚动条但保持流畅体验 */
+        #tool-modal .modal-content {
+            /* GPU加速和性能优化 */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            will-change: scroll-position;
+            /* 平滑滚动 */
+            scroll-behavior: smooth;
+            /* iOS优化 */
+            -webkit-overflow-scrolling: touch;
+            /* 隐藏滚动条 */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        #tool-modal .modal-content::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        /* 自定义滚动指示器 - 悬停时显示 */
+        #tool-modal .modal-content {
+            position: relative;
+        }
+
+        #tool-modal .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(59, 130, 246, 0.08) 0%,
+                rgba(59, 130, 246, 0.15) 20%,
+                rgba(59, 130, 246, 0.08) 80%,
+                rgba(59, 130, 246, 0.05) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1;
+            border-radius: 0 2px 2px 0;
+        }
+
+        #tool-modal .modal-content:hover::before {
+            opacity: 1;
+        }
+
+        /* 添加微妙的滚动指示器 */
+        #tool-modal .modal-content::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 0%, transparent 50%, rgba(59, 130, 246, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #tool-modal .modal-content:hover::after {
+            opacity: 1;
+        }
+
+        /* 用户管理弹窗隐藏滚动条 */
+        #user-modal .modal-content::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        #user-modal .modal-content {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        /* 大模型配置弹窗隐藏滚动条 */
+        #config-modal .modal-content::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        #config-modal .modal-content {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
+
         #strategy-detail-modal .modal-content::-webkit-scrollbar {
             width: 0px;
             background: transparent;
@@ -1307,6 +1523,32 @@
             background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
         }
 
+        /* 聊天配置弹窗隐藏滚动条 */
+        #add-profile-modal .modal-content {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+            /* 优化滚动性能 */
+            -webkit-overflow-scrolling: touch; /* iOS 流畅滚动 */
+            will-change: scroll-position, transform, opacity; /* 提示浏览器优化滚动和动画 */
+            transform: translateZ(0); /* 启用硬件加速 */
+            backface-visibility: hidden;
+            /* 防止滚动穿透 */
+            overscroll-behavior-y: contain;
+        }
+
+        #add-profile-modal .smooth-scroll {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            will-change: scroll-position;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        #add-profile-modal .smooth-scroll::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
         #add-profile-modal .form-section {
             background: #f8fafc;
             border: 1px solid rgba(203, 213, 225, 0.3);
@@ -1327,6 +1569,25 @@
         #add-profile-modal .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
+        }
+
+        /* Tool Management Modal Input Focus Styles */
+        #tool-modal input:focus,
+        #tool-modal textarea:focus,
+        #tool-modal select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+            outline: none !important;
+        }
+
+        #tool-modal .header-name:focus,
+        #tool-modal .header-value:focus,
+        #tool-modal .field-name:focus,
+        #tool-modal .field-description:focus,
+        #tool-modal .field-type:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+            outline: none !important;
         }
 
         /* User dropdown menu styles */
@@ -1556,25 +1817,49 @@
             <!-- Navigation Menu Items - Grand and Spaced -->
             <div class="flex-1 flex justify-start ml-4">
                 <div class="hidden md:flex space-x-1">
+                    <!-- Configuration Dropdown -->
+                    <div class="nav-dropdown relative">
+                        <button class="nav-item px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-1"
+                                id="configDropdownBtn">
+                            配置
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                        <div class="nav-dropdown-menu absolute top-full left-0 mt-1 w-48 bg-white rounded-lg py-2 text-sm border border-gray-200 shadow-lg z-50 opacity-0 invisible transform translate-y-2 transition-all duration-200"
+                             id="configDropdownMenu">
+                            <a href="#"
+                               class="nav-dropdown-item px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3"
+                               data-page="llm-configs">
+                                <i class="fas fa-brain w-4"></i>
+                                <span>大模型</span>
+                            </a>
+                            <a href="#"
+                               class="nav-dropdown-item px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3"
+                               data-page="memory-strategy">
+                                <i class="fas fa-memory w-4"></i>
+                                <span>记忆</span>
+                            </a>
+                            <a href="#"
+                               class="nav-dropdown-item px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3"
+                               data-page="chat-profile">
+                                <i class="fas fa-comments w-4"></i>
+                                <span>聊天配置</span>
+                            </a>
+                        </div>
+                    </div>
                     <a href="#"
                        class="nav-item px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                       data-page="llm-configs">
-                        大模型配置
-                    </a>
-                    <a href="#"
-                       class="nav-item px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                       data-page="memory-strategy">
-                        记忆策略
-                    </a>
-                    <a href="#"
-                       class="nav-item px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                       data-page="chat-profile">
-                        聊天配置
+                       data-page="chat">
+                        聊天
                     </a>
                     <a href="#"
                        class="nav-item px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                        data-page="conversations">
-                        历史会话
+                        会话
+                    </a>
+                    <a href="#"
+                       class="nav-item px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                       data-page="tool-management">
+                        工具
                     </a>
                 </div>
             </div>
@@ -1615,6 +1900,10 @@
         <div th:include="llm-configs :: content"></div>
     </div>
 
+    <div id="chat-page" class="page-container">
+        <div th:include="chat :: content"></div>
+    </div>
+
     <div id="conversations-page" class="page-container">
         <div th:include="conversations :: content"></div>
     </div>
@@ -1633,6 +1922,10 @@
     
     <div id="user-management-page" class="page-container">
         <div th:include="user-management :: content"></div>
+    </div>
+    
+    <div id="tool-management-page" class="page-container">
+        <div th:include="tool-management :: content"></div>
     </div>
 </main>
 
@@ -1669,6 +1962,28 @@
 
 <!-- JavaScript for page navigation and state management -->
 <script th:inline="javascript">
+    // 处理TortoiseBaseResult响应格式的辅助函数
+    function handleApiResponse(response) {
+        return response.json().then(data => {
+            // 检查响应格式是否为TortoiseBaseResult
+            if (data.hasOwnProperty('code')) {
+                // 当code是500时，显示toast提示msg
+                if (data.code === 500 || data.code !== 200) {
+                    const errorMsg = data.msg || '操作失败';
+                    showToast(errorMsg, false);
+                    // 返回一个拒绝的Promise，以便后续catch可以处理
+                    return Promise.reject(new Error(errorMsg));
+                }
+                // 当code是200时，返回data中的数据
+                if (data.code === 200) {
+                    return data.data;
+                }
+            }
+            // 如果不是TortoiseBaseResult格式，返回原始数据（兼容旧代码）
+            return data;
+        });
+    }
+
     // 创建一个带认证的fetch函数
     function authenticatedFetch(url, options = {}) {
         // 获取存储的token
@@ -1697,7 +2012,50 @@
         }
 
         // 调用原生fetch
-        return fetch(url, mergedOptions);
+        return fetch(url, mergedOptions).then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    // 处理HTTP错误状态码，但尝试解析TortoiseBaseResult格式
+                    if (data && data.hasOwnProperty('code') && data.code === 500) {
+                        const errorMsg = data.msg || '操作失败';
+                        showToast(errorMsg, false);
+                        return Promise.reject(new Error(errorMsg));
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }).catch(err => {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                });
+            }
+            return response;
+        });
+    }
+
+    // 通用的下拉菜单显示/隐藏函数（支持元素对象和ID字符串）
+    function showDropdown(dropdown) {
+        // 如果传入的是字符串，则通过ID获取元素
+        const dropdownElement = typeof dropdown === 'string' ? document.getElementById(dropdown) : dropdown;
+        if (dropdownElement) {
+            dropdownElement.style.display = 'block';
+            dropdownElement.style.visibility = 'visible';
+            // 使用requestAnimationFrame确保DOM更新后再应用动画
+            requestAnimationFrame(() => {
+                dropdownElement.style.opacity = '1';
+                dropdownElement.style.transform = 'translateY(0)';
+            });
+        }
+    }
+
+    function hideDropdown(dropdown) {
+        // 如果传入的是字符串，则通过ID获取元素
+        const dropdownElement = typeof dropdown === 'string' ? document.getElementById(dropdown) : dropdown;
+        if (dropdownElement) {
+            dropdownElement.style.opacity = '0';
+            dropdownElement.style.transform = 'translateY(-5px)';
+            setTimeout(() => {
+                dropdownElement.style.display = 'none';
+                dropdownElement.style.visibility = 'hidden';
+            }, 200);
+        }
     }
 
     // 退出登录相关函数（全局作用域）
@@ -1805,6 +2163,48 @@
             });
         });
 
+        // Configuration dropdown handling
+        const configDropdownBtn = document.getElementById('configDropdownBtn');
+        const configDropdownMenu = document.getElementById('configDropdownMenu');
+
+        // Toggle config dropdown menu
+        if (configDropdownBtn) {
+            configDropdownBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Use requestAnimationFrame for smoother animation
+                requestAnimationFrame(() => {
+                    const isActive = configDropdownMenu.classList.contains('active');
+                    configDropdownMenu.classList.toggle('active');
+
+                    // Rotate chevron icon with hardware acceleration
+                    const chevron = this.querySelector('.fa-chevron-down');
+                    if (chevron) {
+                        chevron.style.transform = isActive ? 'rotate(0deg)' : 'rotate(180deg)';
+                    }
+                });
+            });
+        }
+
+        // Handle config dropdown navigation items
+        const configDropdownItems = document.querySelectorAll('.nav-dropdown-item[data-page]');
+        configDropdownItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('data-page');
+                switchPage(page);
+                // Save current page to localStorage
+                localStorage.setItem('tortoise-active-page', page);
+                // Close dropdown after navigation
+                configDropdownMenu.classList.remove('active');
+                const chevron = configDropdownBtn.querySelector('.fa-chevron-down');
+                if (chevron) {
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            });
+        });
+
         // User dropdown handling
         const userDropdownBtn = document.getElementById('userDropdownBtn');
         const userDropdownMenu = document.getElementById('userDropdownMenu');
@@ -1837,6 +2237,19 @@
                 document.removeEventListener('click', dropdownCloseHandler);
             }
             dropdownCloseHandler = function(e) {
+                // Close config dropdown if clicked outside
+                if (configDropdownBtn && configDropdownMenu &&
+                    !configDropdownBtn.contains(e.target) && !configDropdownMenu.contains(e.target)) {
+                    requestAnimationFrame(() => {
+                        configDropdownMenu.classList.remove('active');
+                        const chevron = configDropdownBtn.querySelector('.fa-chevron-down');
+                        if (chevron) {
+                            chevron.style.transform = 'rotate(0deg)';
+                        }
+                    });
+                }
+
+                // Close user dropdown if clicked outside
                 if (!userDropdownBtn.contains(e.target) && !userDropdownMenu.contains(e.target)) {
                     requestAnimationFrame(() => {
                         userDropdownMenu.classList.remove('active');
@@ -1866,17 +2279,14 @@
         }
 
         function switchPage(pageName) {
-            // Get target elements first
+            // Get elements dynamically to avoid dependency on local variables
             const activePage = document.getElementById(`${pageName}-page`);
-            const targetNavItems = Array.from(navItems);
-            const targetDropdownItems = Array.from(dropdownNavItems);
-            const targetNavItem = targetNavItems.find(item => item.getAttribute('data-page') === pageName);
-            const targetDropdownItem = targetDropdownItems.find(item => item.getAttribute('data-page') === pageName);
-            const otherNavItems = targetNavItems.filter(item => item.getAttribute('data-page') !== pageName);
-            const otherDropdownItems = targetDropdownItems.filter(item => item.getAttribute('data-page') !== pageName);
+            const allNavItems = document.querySelectorAll('.nav-item[data-page]');
+            const allDropdownItems = document.querySelectorAll('.user-dropdown-item[data-page]');
+            const allPages = document.querySelectorAll('.page-container');
 
-            // Simultaneously update everything in one batch
-            const allPages = Array.from(pages);
+            const targetNavItem = Array.from(allNavItems).find(item => item.getAttribute('data-page') === pageName);
+            const targetDropdownItem = Array.from(allDropdownItems).find(item => item.getAttribute('data-page') === pageName);
 
             // Update everything at once - no time gaps
             // First set new states
@@ -1887,7 +2297,7 @@
             allPages.forEach(page => {
                 if (page !== activePage) page.classList.remove('active-page');
             });
-            navItems.forEach(item => {
+            allNavItems.forEach(item => {
                 if (item !== targetNavItem) item.classList.remove('active');
             });
 
@@ -1898,14 +2308,35 @@
             loadUserInfo();
         }
 
+        // Export switchPage function to global scope for use in other pages
+        window.switchPage = switchPage;
+
 
         function checkUserRole() {
             // 获取用户信息以检查角色
             authenticatedFetch('/api/user/profile')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.success && data.data) {
-                        const roleCode = data.data.roleCode;
+                    // 处理TortoiseBaseResult格式
+                    let actualData = data;
+                    if (data && data.hasOwnProperty('code')) {
+                        if (data.code === 200) {
+                            actualData = data.data;
+                        } else {
+                            // code不是200，错误已在handleApiResponse中处理
+                            return;
+                        }
+                    }
+                    
+                    // 兼容旧格式或处理数据
+                    const userData = actualData.data || actualData;
+                    if (userData && userData.roleCode !== undefined) {
+                        const roleCode = userData.roleCode;
                         // SUPER_ADMIN的ID是1L
                         if (roleCode === 1) {
                             const managementNav = document.getElementById('user-management-nav');
@@ -1916,7 +2347,7 @@
                     }
                 })
                 .catch(error => {
-                    // Error checking user role
+                    // Error checking user role - 错误消息已在handleApiResponse中显示
                 });
         }
 

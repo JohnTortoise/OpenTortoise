@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -40,15 +42,20 @@ public class ChatCompletionResponse {
     }
 
     @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Message {
-        private String content;
-        private String role;
-
+    public static class Message extends io.github.johntortoise.core.dto.model.Message{
         @JsonProperty("reasoning_content")
         private String reasoningContent;
+
+        private String type;
+
+        @JsonProperty("tool_calls")
+        private List<ToolCall> toolCalls;
+
+        @JsonProperty("tool_call_id")
+        private String toolCallId;
+
     }
+
+
 
 }

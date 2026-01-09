@@ -2,6 +2,7 @@ package io.github.johntortoise.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import io.github.johntortoise.core.dto.model.Message;
 import io.github.johntortoise.core.dto.sys.AfterChatDTO;
 import io.github.johntortoise.dto.TortoiseLlmUsageDTO;
 import io.github.johntortoise.enums.TortoiseLlmUsageEnum;
@@ -17,8 +18,9 @@ public interface TortoiseLlmUsageService extends IService<TortoiseLlmUsage> {
     
     Page<TortoiseLlmUsageDTO> page(String conversationId, Long current, Long size);
 
-    
-    void recordUsage(AfterChatDTO afterChatDTO, TortoiseLlmUsageEnum tortoiseLlmUsageEnum);
+
+    TortoiseLlmUsage generateDetail(String req, String reply,TortoiseLlmUsageEnum tortoiseLlmUsageEnum,String conversationId);
+
 
     TortoiseLlmUsage queryFirstUsageByLLmConfigId(Long llmConfigId);
 }

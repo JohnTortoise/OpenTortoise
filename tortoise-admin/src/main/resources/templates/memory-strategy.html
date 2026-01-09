@@ -75,9 +75,11 @@
                     </tbody>
                     </table>
                     
-                    <!-- 分页容器 -->
-                    <div id="strategies-pagination-container" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                        <!-- 分页组件将在这里动态渲染 -->
+                    <!-- Pagination -->
+                    <div class="flex justify-end mt-4">
+                        <div id="strategies-pagination-container" class="flex items-center justify-between">
+                            <!-- Pagination will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -218,7 +220,6 @@
                 <div class="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse gap-3 flex-shrink-0 border-t border-gray-200">
                     <button type="button" onclick="closeStrategyDetailModal()"
                             class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
-                        <i class="fas fa-times mr-2"></i>
                         关闭
                     </button>
                 </div>
@@ -255,7 +256,7 @@
 
                                 <div>
                                     <label for="llm-model-config-search" class="block text-sm font-medium text-gray-700">
-                                        LLM配置 <span class="required-star">*</span>
+                                        LLM配置 <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative mt-1">
                                         <input type="text" id="llm-model-config-search" 
@@ -284,12 +285,20 @@
                                     <label for="memory-type" class="block text-sm font-semibold text-gray-700 mb-2">
                                         记忆策略类型 <span class="text-red-500">*</span>
                                     </label>
-                                    <select id="memory-type" name="memoryType" required
-                                            class="input-modern w-full">
-                                        <option value="1">截断</option>
-                                        <option value="2">摘要</option>
-                                        <option value="3">时序图谱</option>
-                                    </select>
+                                    <div class="relative mt-1">
+                                        <input type="text" id="memory-type-input"
+                                               placeholder="选择记忆策略类型"
+                                               class="input-modern w-full cursor-pointer"
+                                               readonly>
+                                        <div id="memory-type-dropdown"
+                                             class="absolute z-50 mt-1 w-full bg-white shadow-xl rounded-lg py-2 text-sm border border-gray-200 focus:outline-none hidden hide-scrollbar"
+                                             style="box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);">
+                                            <div class="search-dropdown-item" data-value="1">截断</div>
+                                            <div class="search-dropdown-item" data-value="2">摘要</div>
+                                            <div class="search-dropdown-item" data-value="3">时序图谱</div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="memory-type" name="memoryType" required>
                                 </div>
 
                                 <div>
@@ -324,13 +333,22 @@
 
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                                 <div>
-                                    <label for="with-history" class="block text-sm font-medium text-gray-700">
+                                    <label for="with-history-input" class="block text-sm font-medium text-gray-700">
                                         是否利用历史记忆(可以减少分析成本)<span class="text-red-500">*</span>
                                     </label>
-                                    <select id="with-history" class="input-modern w-full mt-1">
-                                        <option value="true">是</option>
-                                        <option value="false">否</option>
-                                    </select>
+                                    <div class="relative mt-1">
+                                        <input type="text" id="with-history-input"
+                                               placeholder="选择是否利用历史记忆"
+                                               class="input-modern w-full cursor-pointer"
+                                               readonly>
+                                        <div id="with-history-dropdown"
+                                             class="absolute z-50 mt-1 w-full bg-white shadow-xl rounded-lg py-2 text-sm border border-gray-200 focus:outline-none hidden hide-scrollbar"
+                                             style="box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);">
+                                            <div class="search-dropdown-item" data-value="true">是</div>
+                                            <div class="search-dropdown-item" data-value="false">否</div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="with-history" name="withHistory" required>
                                 </div>
 
                                 <div class="hidden">
@@ -341,7 +359,7 @@
                             <!-- Custom Prompt Toggle -->
                             <div class="mt-4">
                                 <label class="flex items-center">
-                                    <input type="checkbox" id="custom-prompt-toggle" class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2">
+                                    <input type="checkbox" id="custom-prompt-toggle" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
                                     <span class="ml-2 text-sm font-medium text-gray-700">自定义提示词</span>
                                 </label>
                             </div>
@@ -350,7 +368,7 @@
                             <div id="custom-prompt-fields" class="hidden">
                                 <div class="mt-4">
                                     <label for="base-prompt" class="block text-sm font-medium text-gray-700">
-                                        基础提示词(非必填)
+                                        基础提示词
                                     </label>
                                     <textarea id="base-prompt" rows="3"
                                               class="input-modern w-full mt-1"
@@ -359,7 +377,7 @@
 
                                 <div class="mt-4">
                                     <label for="over-length-prompt" class="block text-sm font-medium text-gray-700">
-                                        超长提示词(非必填)
+                                        超长提示词
                                     </label>
                                     <textarea id="over-length-prompt" rows="2"
                                               class="input-modern w-full mt-1"
@@ -368,7 +386,7 @@
 
                                 <div class="mt-4">
                                     <label for="update-prompt" class="block text-sm font-medium text-gray-700">
-                                        更新提示词(非必填)
+                                        更新提示词
                                     </label>
                                     <textarea id="update-prompt" rows="2"
                                               class="input-modern w-full mt-1"
@@ -380,15 +398,16 @@
                     </form>
                 </div>
 
+                <div class="mb-6"></div>
+
                 <!-- Fixed Modal Footer -->
                 <div class="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse gap-3 flex-shrink-0 border-t border-gray-200">
                     <button type="button" onclick="saveStrategy()"
                             class="btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
-                        保存策略
+                        保存
                     </button>
                     <button type="button" onclick="closeStrategyModal()"
                             class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
-                        <i class="fas fa-times mr-2"></i>
                         取消
                     </button>
                 </div>
@@ -409,6 +428,10 @@
             
             // 分页相关变量
             let currentPage = 1;
+            let currentPageSize = 10; // 每页显示条数
+
+            // Pagination component instance
+            let strategiesPagination;
             
             // DOM Elements
             const searchForm = document.getElementById('strategy-search-form');
@@ -450,8 +473,124 @@
                 }
             });
 
+            // showDropdown 和 hideDropdown 函数已在 layout.html 中定义，这里移除重复定义
+
+            // 辅助函数：滚动下拉菜单到可见区域
+            function scrollDropdownIntoView(dropdownElement) {
+                if (!dropdownElement) return;
+
+                // 获取弹窗的滚动容器（带有overflow-y-auto的元素）
+                const modalContent = dropdownElement.closest('.overflow-y-auto');
+                if (!modalContent) return;
+
+                // 获取下拉菜单的边界矩形
+                const dropdownRect = dropdownElement.getBoundingClientRect();
+                const containerRect = modalContent.getBoundingClientRect();
+
+                // 计算下拉菜单相对于容器的位置
+                const dropdownBottom = dropdownRect.bottom - containerRect.top;
+                const containerHeight = containerRect.height;
+
+                // 如果下拉菜单底部超出了容器高度，需要滚动
+                if (dropdownBottom > containerHeight) {
+                    const scrollTop = modalContent.scrollTop;
+                    const scrollAmount = dropdownBottom - containerHeight + 10; // 多加10px边距
+                    modalContent.scrollTo({
+                        top: scrollTop + scrollAmount,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            function setupMemoryTypeDropdown() {
+                const memoryTypeInput = document.getElementById('memory-type-input');
+                const memoryTypeDropdown = document.getElementById('memory-type-dropdown');
+                const memoryTypeHidden = document.getElementById('memory-type');
+
+                // 初始化默认值
+                const defaultOption = memoryTypeDropdown.querySelector('.search-dropdown-item[data-value="1"]');
+                if (defaultOption) {
+                    memoryTypeInput.value = defaultOption.textContent;
+                    memoryTypeHidden.value = defaultOption.getAttribute('data-value');
+                }
+
+                // 输入框点击时显示下拉菜单
+                memoryTypeInput.onclick = function() {
+                    showDropdown(memoryTypeDropdown);
+                    // 延迟执行滚动，确保下拉菜单已显示
+                    setTimeout(() => {
+                        scrollDropdownIntoView(memoryTypeDropdown);
+                    }, 10);
+                };
+
+                // 点击其他地方关闭下拉
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('#memory-type-input') && !e.target.closest('#memory-type-dropdown')) {
+                        hideDropdown(memoryTypeDropdown);
+                    }
+                });
+
+                // 处理下拉选项点击
+                memoryTypeDropdown.addEventListener('click', function(e) {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item) {
+                        const value = item.getAttribute('data-value');
+                        const text = item.textContent;
+
+                        memoryTypeInput.value = text;
+                        memoryTypeHidden.value = value;
+                        hideDropdown(memoryTypeDropdown);
+
+                        // 触发记忆类型变更
+                        toggleFieldsBasedOnMemoryType(value);
+                    }
+                });
+            }
+
+            function setupWithHistoryDropdown() {
+                const withHistoryInput = document.getElementById('with-history-input');
+                const withHistoryDropdown = document.getElementById('with-history-dropdown');
+                const withHistoryHidden = document.getElementById('with-history');
+
+                // 初始化默认值
+                const defaultOption = withHistoryDropdown.querySelector('.search-dropdown-item[data-value="true"]');
+                if (defaultOption) {
+                    withHistoryInput.value = defaultOption.textContent;
+                    withHistoryHidden.value = defaultOption.getAttribute('data-value');
+                }
+
+                // 输入框点击时显示下拉菜单
+                withHistoryInput.onclick = function() {
+                    showDropdown(withHistoryDropdown);
+                    // 延迟执行滚动，确保下拉菜单已显示
+                    setTimeout(() => {
+                        scrollDropdownIntoView(withHistoryDropdown);
+                    }, 10);
+                };
+
+                // 点击其他地方关闭下拉
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('#with-history-input') && !e.target.closest('#with-history-dropdown')) {
+                        hideDropdown(withHistoryDropdown);
+                    }
+                });
+
+                // 处理下拉选项点击
+                withHistoryDropdown.addEventListener('click', function(e) {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item) {
+                        const value = item.getAttribute('data-value');
+                        const text = item.textContent;
+
+                        withHistoryInput.value = text;
+                        withHistoryHidden.value = value;
+                        hideDropdown(withHistoryDropdown);
+                    }
+                });
+            }
+
             // Memory type change functionality
-            const memoryTypeSelect = document.getElementById('memory-type');
+            const memoryTypeHidden = document.getElementById('memory-type');
             const batchAnalysisSizeField = document.getElementById('batch-analysis-size').closest('.grid.grid-cols-1.gap-4.sm\\:grid-cols-2');
             const withHistoryField = document.getElementById('with-history').closest('.grid.grid-cols-1.gap-4.sm\\:grid-cols-2');
             const customPromptToggleField = document.getElementById('custom-prompt-toggle').closest('.mt-4');
@@ -477,6 +616,7 @@
                     // 清空隐藏字段的值
                     document.getElementById('batch-analysis-size').value = '';
                     document.getElementById('with-history').value = 'false';
+                    document.getElementById('with-history-input').value = '否';
                     document.getElementById('custom-prompt-toggle').checked = false;
                     document.getElementById('base-prompt').value = '';
                     document.getElementById('over-length-prompt').value = '';
@@ -502,12 +642,8 @@
                 }
             }
 
-            memoryTypeSelect.addEventListener('change', function() {
-                toggleFieldsBasedOnMemoryType(this.value);
-            });
-
             // 初始化时根据当前选择的状态
-            toggleFieldsBasedOnMemoryType(memoryTypeSelect.value);
+            toggleFieldsBasedOnMemoryType(memoryTypeHidden.value);
 
             // Custom prompt toggle functionality
             const customPromptToggle = document.getElementById('custom-prompt-toggle');
@@ -524,6 +660,15 @@
                 }
             });
 
+            // 初始化记忆策略类型下拉框
+            setupMemoryTypeDropdown();
+
+            // 初始化是否利用历史记忆下拉框
+            setupWithHistoryDropdown();
+
+            // Initialize pagination component
+            initPagination();
+
             // Initialize page active state
             isPageActive = document.getElementById('memory-strategy-page').classList.contains('active-page');
 
@@ -534,12 +679,32 @@
                 setupLLMConfigSearch(); // 设置搜索功能
             }
 
+            function initPagination() {
+                if (paginationContainer && !strategiesPagination) {
+                    strategiesPagination = new PaginationComponent({
+                        container: paginationContainer,
+                        currentPage: currentPage,
+                        pageSize: currentPageSize,
+                        onPageChange: (page) => {
+                            loadStrategies(page);
+                        },
+                        onPageSizeChange: (pageSize) => {
+                            currentPageSize = pageSize;
+                            currentPage = 1;
+                            loadStrategies(currentPage);
+                        }
+                    });
+                }
+            }
+
             // Handle page changes
             document.addEventListener('pageChanged', function(e) {
                 if (e.detail === 'memory-strategy') {
                     // Only load if page wasn't already active
                     if (!isPageActive) {
                         isPageActive = true;
+                        // Initialize pagination component first
+                        initPagination();
                         loadStrategies();
                     }
                 } else {
@@ -563,23 +728,40 @@
             function handleSearch(e) {
                 e.preventDefault();
                 currentSearch.policyName = document.getElementById('policy-name-search').value;
-                loadStrategies();
+                currentPage = 1;
+                loadStrategies(currentPage);
             }
 
             function loadStrategies(page = 1) {
                 const params = new URLSearchParams();
-                params.append('page', page);
-                params.append('size', 10); // 默认每页10条数据
+                params.append('pageNum', page);
+                params.append('pageSize', currentPageSize);
                 params.append('name', currentSearch.policyName); // 保持使用policyName以匹配当前代码
                 
                 authenticatedFetch(`/api/policy/page?${params}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        renderStrategiesTable(data.records || []);
-                        renderStrategiesPagination(data);
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载数据失败');
+                            }
+                        }
+                        
+                        renderStrategiesTable(actualData.records || []);
+                        renderStrategiesPagination(actualData);
                         currentPage = page;
                     })
                     .catch(error => {
+                        // 错误消息已在handleApiResponse中显示toast
                         strategiesTableBody.innerHTML = `
                             <tr>
                                 <td colspan="7" class="px-6 py-4 text-center text-sm text-red-500">
@@ -591,145 +773,12 @@
             }
             
             function renderStrategiesPagination(pageData) {
-                const { current, pages, size, total } = pageData;
-                const startItem = (current - 1) * size + 1;
-                const endItem = Math.min(current * size, total);
-                
-                // 当没有数据时，显示第0到0条结果
-                const displayStart = total > 0 ? startItem : 0;
-                const displayEnd = total > 0 ? endItem : 0;
-                
-                let paginationHtml = `
-                    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-                        <div class="flex flex-1 justify-between sm:hidden">
-                            <button id="strategies-mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                上一页
-                            </button>
-                            <button id="strategies-mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                下一页
-                            </button>
-                        </div>
-                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
-                                </p>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="flex items-center">
-                                    <span class="text-sm text-gray-700 mr-2">第</span>
-                                    <input type="number" min="1" max="${pages}" value="${current}" 
-                                           class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                           id="strategies-page-input">
-                                    <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
-                                    <button id="strategies-page-go-btn" 
-                                            class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                        跳转
-                                    </button>
-                                </div>
-                                <div class="flex space-x-2 ml-4">
-                                    <button id="strategies-prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">上一页</span>
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                    <button id="strategies-next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">下一页</span>
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                paginationContainer.innerHTML = paginationHtml;
-                
-                // Add event listeners after rendering
-                setTimeout(() => {
-                    // Previous page buttons
-                    const prevBtn = document.getElementById('strategies-prev-btn');
-                    const mobilePrevBtn = document.getElementById('strategies-mobile-prev-btn');
-                    
-                    // Next page buttons
-                    const nextBtn = document.getElementById('strategies-next-btn');
-                    const mobileNextBtn = document.getElementById('strategies-mobile-next-btn');
-                    
-                    // Page input and go button
-                    const pageInput = document.getElementById('strategies-page-input');
-                    const goBtn = document.getElementById('strategies-page-go-btn');
-                    
-                    // Disable/enable buttons based on current page
-                    if (current <= 1) {
-                        if (prevBtn) {
-                            prevBtn.disabled = true;
-                            prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                        if (mobilePrevBtn) {
-                            mobilePrevBtn.disabled = true;
-                            mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                    } else {
-                        if (prevBtn) {
-                            prevBtn.disabled = false;
-                            prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            prevBtn.onclick = () => {
-                                loadStrategies(current - 1);
-                            };
-                        }
-                        if (mobilePrevBtn) {
-                            mobilePrevBtn.disabled = false;
-                            mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            mobilePrevBtn.onclick = () => {
-                                loadStrategies(current - 1);
-                            };
-                        }
-                    }
-                    
-                    if (current >= pages) {
-                        if (nextBtn) {
-                            nextBtn.disabled = true;
-                            nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                        if (mobileNextBtn) {
-                            mobileNextBtn.disabled = true;
-                            mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                    } else {
-                        if (nextBtn) {
-                            nextBtn.disabled = false;
-                            nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            nextBtn.onclick = () => {
-                                loadStrategies(current + 1);
-                            };
-                        }
-                        if (mobileNextBtn) {
-                            mobileNextBtn.disabled = false;
-                            mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            mobileNextBtn.onclick = () => {
-                                loadStrategies(current + 1);
-                            };
-                        }
-                    }
-                    
-                    // Page input and go button
-                    if (pageInput && goBtn) {
-                        goBtn.onclick = () => {
-                            const page = parseInt(pageInput.value);
-                            if (!isNaN(page) && page >= 1 && page <= pages) {
-                                loadStrategies(page);
-                            } else {
-                                showToast('请输入有效的页码', false);
-                            }
-                        };
-                        
-                        // Allow pressing Enter to go to the page
-                        pageInput.addEventListener('keypress', (e) => {
-                            if (e.key === 'Enter') {
-                                goBtn.click();
-                            }
-                        });
-                    }
-                }, 0);
+                if (!strategiesPagination) {
+                    initPagination();
+                }
+                if (strategiesPagination) {
+                    strategiesPagination.render(pageData);
+                }
             }
 
             function renderStrategiesTable(strategies) {
@@ -784,6 +833,22 @@
                 document.getElementById('custom-prompt-toggle').checked = false;
                 document.getElementById('custom-prompt-fields').classList.add('hidden');
 
+                // 重置记忆策略类型下拉框为默认值
+                const defaultOption = document.querySelector('#memory-type-dropdown .search-dropdown-item[data-value="1"]');
+                if (defaultOption) {
+                    document.getElementById('memory-type-input').value = defaultOption.textContent;
+                    document.getElementById('memory-type').value = defaultOption.getAttribute('data-value');
+                }
+
+                // 重置是否利用历史记忆下拉框为默认值
+                const defaultWithHistoryOption = document.querySelector('#with-history-dropdown .search-dropdown-item[data-value="true"]');
+                if (defaultWithHistoryOption) {
+                    document.getElementById('with-history-input').value = defaultWithHistoryOption.textContent;
+                    document.getElementById('with-history').value = defaultWithHistoryOption.getAttribute('data-value');
+                }
+
+                // 确保字段显示状态正确
+                toggleFieldsBasedOnMemoryType('1');
 
                 // 确保搜索功能在模态框打开时重新初始化
                 setTimeout(() => {
@@ -849,42 +914,69 @@
                     body: JSON.stringify(strategyData)
                 })
                     .then(response => {
-                        if (response.ok) {
-                            // 先关闭弹窗
-                            strategyModal.classList.remove('active');
-                            setTimeout(() => {
-                                strategyModal.classList.add('hidden');
-                                // 恢复背景滚动
-                                document.body.style.overflow = '';
-                                // 重新加载数据
-                                loadStrategies();
-                                showToast('保存成功', true, 1000);
-                            }, 300); // 与CSS transition时间匹配
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                // 先关闭弹窗
+                                strategyModal.classList.remove('active');
+                                setTimeout(() => {
+                                    strategyModal.classList.add('hidden');
+                                    // 恢复背景滚动
+                                    document.body.style.overflow = '';
+                                    // 重新加载数据
+                                    loadStrategies();
+                                    showToast(data.msg || '保存成功', true, 1000);
+                                }, 300); // 与CSS transition时间匹配
+                            } else {
+                                throw new Error(data.msg || '保存失败');
+                            }
                         } else {
-                            // 尝试解析错误响应
-                            return response.text().then(text => {
-                                try {
-                                    const errorData = JSON.parse(text);
-                                    const errorMessage = errorData.message || '保存失败';
-                                    throw new Error(errorMessage);
-                                } catch (parseError) {
-                                    // 如果不是有效的JSON，使用响应文本作为错误消息
-                                    const errorMessage = text || '保存失败，请稍后重试';
-                                    throw new Error(errorMessage);
-                                }
-                            });
+                            // 兼容旧格式
+                            if (response.ok) {
+                                strategyModal.classList.remove('active');
+                                setTimeout(() => {
+                                    strategyModal.classList.add('hidden');
+                                    document.body.style.overflow = '';
+                                    loadStrategies();
+                                    showToast('保存成功', true, 1000);
+                                }, 300);
+                            } else {
+                                throw new Error('保存失败');
+                            }
                         }
                     })
                     .catch(error => {
-                        console.log("erormmi"+error.message)
-                        showToast(error.message, false);
+                        // 错误消息已在handleApiResponse中显示toast
+                        if (!error.message || error.message.includes('HTTP')) {
+                            showToast(error.message || '保存失败', false);
+                        }
                     });
             }
 
             function editStrategy(id) {
                 authenticatedFetch(`/api/policy/detail?id=${id}`)
-                    .then(response => response.json())
-                    .then(strategy => {
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        let strategy = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                strategy = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载策略详情失败');
+                            }
+                        }
                         // 填充表单数据
                         document.getElementById('strategy-id').value = strategy.id || '';
                         document.getElementById('policy-name').value = strategy.name || '';
@@ -910,13 +1002,20 @@
 
                         // 填充MemoryBase数据
                         if (strategy.memoryBase) {
-                            document.getElementById('memory-type').value = strategy.memoryBase.type !== undefined ? strategy.memoryBase.type : '1';
+                            const memoryType = strategy.memoryBase.type !== undefined ? strategy.memoryBase.type : 1;
+                            document.getElementById('memory-type').value = memoryType;
+
+                            // 设置显示文本
+                            const memoryTypeText = getMemoryTypeText(memoryType);
+                            document.getElementById('memory-type-input').value = memoryTypeText;
+
                             document.getElementById('threshold').value = strategy.memoryBase.threshold !== undefined ? strategy.memoryBase.threshold : '';
                             document.getElementById('batch-analysis-size').value = strategy.memoryBase.batchAnalysisSize || '';
                             document.getElementById('max-length').value = strategy.memoryBase.maxLength || '';
                             document.getElementById('base-prompt').value = strategy.memoryBase.basePrompt || '';
                             document.getElementById('over-length-prompt').value = strategy.memoryBase.overLengthPrompt || '';
                             document.getElementById('with-history').value = strategy.memoryBase.withHistory ? 'true' : 'false';
+                            document.getElementById('with-history-input').value = strategy.memoryBase.withHistory ? '是' : '否';
                             document.getElementById('update-prompt').value = strategy.memoryBase.updatePrompt || '';
 
                             // Check if any prompt fields have content and show custom prompt section
@@ -969,8 +1068,22 @@
                 params.append('keyword', searchKeyword);
                 
                 authenticatedFetch(`/api/chatProfile/searchModel?${params}`)
-                    .then(response => response.json())
-                    .then(configs => {
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        let configs = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                configs = data.data;
+                            } else {
+                                throw new Error(data.msg || '搜索模型配置失败');
+                            }
+                        }
                         const dropdownElement = document.getElementById('llm-config-dropdown');
                         const searchInput = document.getElementById('llm-model-config-search');
                         const currentConfigId = document.getElementById('llm-model-config').value;
@@ -1078,8 +1191,22 @@
             // Strategy Detail Modal Functions
             window.openDetailModal = function(id) {
                 authenticatedFetch(`/api/policy/detail?id=${id}`)
-                    .then(response => response.json())
-                    .then(strategy => {
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        let strategy = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                strategy = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载策略详情失败');
+                            }
+                        }
                         // Populate detail modal with strategy data
                         document.getElementById('detail-policy-name').value = strategy.name || '';
                         document.getElementById('detail-llm-config').value = strategy.llmModelConfigId || '';

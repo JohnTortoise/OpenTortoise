@@ -1,6 +1,7 @@
 package io.github.johntortoise.controller;
 
 import io.github.johntortoise.core.dto.model.Message;
+import io.github.johntortoise.core.dto.sys.TortoiseBaseResult;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.service.TortoiseMemoryService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +26,12 @@ public class TortoiseMemoryController {
 
     
     @GetMapping("/getMemoriesByConversationId")
-    public ResponseEntity<List<Message>> getMemoriesByConversationId(
+    public TortoiseBaseResult<List<Message>> getMemoriesByConversationId(
             @RequestParam @NotBlank(message = "对话ID不能为空") String conversationId) {
         try {
             LogUtil.debug("获取记忆: conversationId={}", conversationId);
             List<Message> memories = memoryService.getMemoriesByConversationId(conversationId);
-            return ResponseEntity.ok(memories);
+            return TortoiseBaseResult.ok(memories);
         } catch (Exception e) {
             LogUtil.error("获取记忆失败: conversationId={}", conversationId, e);
             throw e;

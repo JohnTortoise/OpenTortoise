@@ -17,6 +17,7 @@ import io.github.johntortoise.core.exceptions.TortoiseBusinessException;
 import io.github.johntortoise.core.message.TortoiseMessageHandler;
 import io.github.johntortoise.core.utils.EmptyUtil;
 import io.github.johntortoise.core.utils.LogUtil;
+import io.github.johntortoise.core.utils.StreamUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,24 +52,15 @@ public class DefaultTortoiseMessageHandler<T> implements TortoiseMessageHandler<
     public MainInfo convertForMainInfo(List<Message> history, Message input, String resp, StreamCallBack streamCallBack) {
         try {
 
-
             final MainInfo.Tokens tokens = new MainInfo.Tokens();
             final String content;
             final String role;
 
-            if (streamCallBack != null) {
+            ProcessedApiResult apiResult = processApiResponse(resp);
+            content = apiResult.getContent();
+            role = apiResult.getRole();
+            updateTokensFromUsage(apiResult.getUsage(), tokens);
 
-                ProcessedStreamResult streamResult = processStreamResponse(resp);
-                content = streamResult.getContent();
-                role = streamResult.getRole();
-                updateTokensFromUsage(streamResult.getUsage(), tokens);
-            } else {
-
-                ProcessedApiResult apiResult = processApiResponse(resp);
-                content = apiResult.getContent();
-                role = apiResult.getRole();
-                updateTokensFromUsage(apiResult.getUsage(), tokens);
-            }
             return MainInfo.builder()
                     .history(history != null ? history : Collections.emptyList())
                     .input(input)
@@ -88,37 +80,6 @@ public class DefaultTortoiseMessageHandler<T> implements TortoiseMessageHandler<
     }
 
 
-    private ProcessedStreamResult processStreamResponse(String resp) throws JsonProcessingException {
-        StringBuilder contentBuilder = new StringBuilder();
-        String role = "";
-        Usage usage = null;
-
-        List<String> jsonStrings = objectMapper.readValue(resp, new TypeReference<List<String>>() {});
-
-        for (String jsonStr : jsonStrings) {
-            ChatChunk chatChunk = objectMapper.readValue(jsonStr, ChatChunk.class);
-
-
-            if (EmptyUtil.isNotEmpty(chatChunk.getChoices())) {
-                ChatChunk.Delta delta = chatChunk.getChoices().get(0).getDelta();
-                if (delta != null) {
-                    if (EmptyUtil.isNotEmpty(delta.getContent())) {
-                        contentBuilder.append(delta.getContent());
-                    }
-                    if (EmptyUtil.isNotEmpty(delta.getRole())) {
-                        role = delta.getRole();
-                    }
-                }
-            }
-
-
-            if (chatChunk.getUsage() != null) {
-                usage = chatChunk.getUsage();
-            }
-        }
-
-        return new ProcessedStreamResult(contentBuilder.toString(), role, usage);
-    }
 
 
     private ProcessedApiResult processApiResponse(String resp) throws JsonProcessingException {

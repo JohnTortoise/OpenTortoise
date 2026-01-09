@@ -10,7 +10,58 @@ DROP TABLE IF EXISTS `tortoise_memory_prompt_config`;
 DROP TABLE IF EXISTS `tortoise_memory_policy`;
 DROP TABLE IF EXISTS `tortoise_llm_config`;
 DROP TABLE IF EXISTS `tortoise_import_file_record`;
+DROP TABLE IF EXISTS `tortoise_tool`;
+DROP TABLE IF EXISTS `tortoise_conversation_tool`;
+DROP TABLE IF EXISTS `tortoise_message_extend`;
 
+
+
+CREATE TABLE `tortoise_message_extend` (
+                                           `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                           `message_id` bigint NOT NULL COMMENT '消息ID，关联tortoise_message.id',
+                                           `tool_call_messages` json DEFAULT NULL COMMENT '工具调用消息',
+                                           `events` json DEFAULT NULL COMMENT '事件信息',
+                                           `is_deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+                                           `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                           `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                           PRIMARY KEY (`id`),
+                                           UNIQUE KEY `uk_message_id` (`message_id`),
+                                           KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB COMMENT='消息扩展表';
+
+
+CREATE TABLE `tortoise_conversation_tool` (
+                                              `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                              `tool_id` varchar(64) NOT NULL COMMENT '工具ID',
+                                              `conversation_id` varchar(64) NOT NULL COMMENT '会话唯一标识',
+                                              `is_deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+                                              `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                              `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                              PRIMARY KEY (`id`),
+                                              UNIQUE KEY `uk_conversation_tool` (`conversation_id`, `tool_id`),
+                                              KEY `idx_tool_id` (`tool_id`),
+                                              KEY `idx_conversation_id` (`conversation_id`),
+                                              KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB COMMENT='对话工具关联表';
+
+
+CREATE TABLE `tortoise_tool` (
+                                 `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                 `name` varchar(255) NOT NULL COMMENT '工具名称',
+                                 `desc` varchar(1000) DEFAULT NULL COMMENT '工具描述',
+                                 `field_config` json DEFAULT NULL COMMENT '字段配置（JSON格式）',
+                                 `url` varchar(500) NOT NULL COMMENT '请求URL',
+                                 `method` varchar(10) NOT NULL COMMENT '请求方法（GET/POST/PUT/DELETE等）',
+                                 `headers` json DEFAULT NULL COMMENT '请求头（JSON格式）',
+                                 `is_deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+                                 `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                 `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                 PRIMARY KEY (`id`),
+                                 UNIQUE KEY `uk_name` (`name`),
+                                 KEY `idx_is_deleted` (`is_deleted`),
+                                 KEY `idx_create_time` (`create_time`),
+                                 KEY `idx_update_time` (`update_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工具配置表';
 
 CREATE TABLE `tortoise_import_file_record` (
                                                `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
@@ -42,8 +93,8 @@ CREATE TABLE `tortoise_chat_profile` (
                                          `is_deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
                                          `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                          `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                                         `daily_token_limit_conversation` bigint DEFAULT NULL COMMENT '每个会话允许的单日token消耗数',
-                                         `daily_token_limit_total` bigint DEFAULT NULL COMMENT '每个聊天配置允许的单日token消耗数',
+                                         `daily_token_limit_conversation` bigint DEFAULT NULL COMMENT '单日单会话token上限',
+                                         `daily_token_limit_total` bigint DEFAULT NULL COMMENT '单日总token上限',
                                          PRIMARY KEY (`id`),
                                          KEY `idx_llm_config_id` (`llm_config_id`),
                                          KEY `idx_memory_policy_id` (`memory_policy_id`),

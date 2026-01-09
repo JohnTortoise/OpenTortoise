@@ -29,6 +29,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/api/auth/login")
                 .excludePathPatterns("/api/auth/register")
                 .excludePathPatterns("/api/admin/**")
+                .excludePathPatterns("/api/defaultTool/**")
                 .order(1);
 
     }

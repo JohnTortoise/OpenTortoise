@@ -1,6 +1,7 @@
 package io.github.johntortoise.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.johntortoise.core.dto.sys.TortoiseBaseResult;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.context.TortoiseContext;
 import io.github.johntortoise.dto.TortoiseConversationDTO;
@@ -43,7 +44,7 @@ public class TortoiseConversationController {
 
     
     @GetMapping("/page")
-    public ResponseEntity<Page<TortoiseConversationDTO>> page(
+    public TortoiseBaseResult<Page<TortoiseConversationDTO>> page(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String conversationId,
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long pageNum,
@@ -53,7 +54,7 @@ public class TortoiseConversationController {
                     userId, conversationId, pageNum, pageSize);
             Page<TortoiseConversationDTO> page = conversationService.page(conversationId,
                     userId, pageNum, pageSize);
-            return ResponseEntity.ok(page);
+            return TortoiseBaseResult.ok(page);
         } catch (Exception e) {
             LogUtil.error("分页查询对话失败: userId={}, conversationId={}", userId, conversationId, e);
             throw e;
@@ -62,10 +63,9 @@ public class TortoiseConversationController {
 
     
     @PostMapping("/import-excel")
-    public ResponseEntity<Void> importExcel(@RequestParam("file") MultipartFile file) {
+    public TortoiseBaseResult<Void> importExcel(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            LogUtil.error("上传的Excel文件为空");
-            return ResponseEntity.badRequest().build();
+            return TortoiseBaseResult.fail("上传的Excel文件为空");
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -78,8 +78,7 @@ public class TortoiseConversationController {
         if (!tempDir.exists()) {
             boolean mkdir = tempDir.mkdirs();
             if (!mkdir) {
-                LogUtil.error("创建临时目录失败: {}", tempFilePath);
-                return ResponseEntity.internalServerError().build();
+                return TortoiseBaseResult.fail("创建临时目录失败");
             }
         }
 
@@ -91,21 +90,21 @@ public class TortoiseConversationController {
             LogUtil.info("文件已保存到临时路径: {}", tempFile);
             conversationService.importExcel(recordId,tempFile.toString(), originalFilename);
             LogUtil.info("异步方法后: {}", tempFile);
-            return ResponseEntity.ok().build();
+            return TortoiseBaseResult.ok();
         } catch (IOException e) {
             tortoiseImportFileRecordService.fail(recordId,e.getMessage());
             LogUtil.error("保存临时文件失败: {}", originalFilename, e);
-            return ResponseEntity.internalServerError().build();
+            return TortoiseBaseResult.ok();
         }
     }
 
     @GetMapping("importRecordPage")
-    public ResponseEntity<Page<TortoiseImportFileRecord>>  importRecord(@RequestParam(required = false)Long createId,
+    public TortoiseBaseResult<Page<TortoiseImportFileRecord>>  importRecord(@RequestParam(required = false)Long createId,
                                                                         @RequestParam(required = false)String fileName,
                                                                         @RequestParam(required = false) Integer status,
                                                                         @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long pageNum,
                                                                         @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页大小必须大于0") Long pageSize){
-        return ResponseEntity.ok(tortoiseImportFileRecordService.page(createId,fileName,pageNum,pageSize,status));
+        return TortoiseBaseResult.ok(tortoiseImportFileRecordService.page(createId,fileName,pageNum,pageSize,status));
     }
 
 

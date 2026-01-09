@@ -5,8 +5,7 @@ import io.github.johntortoise.core.consts.HTTPConst;
 import io.github.johntortoise.core.dto.model.MainInfo;
 import io.github.johntortoise.core.dto.model.Message;
 import io.github.johntortoise.core.dto.model.Model;
-import io.github.johntortoise.core.dto.sys.AfterChatDTO;
-import io.github.johntortoise.core.dto.sys.ReceiveMessageReq;
+import io.github.johntortoise.core.dto.sys.*;
 import io.github.johntortoise.core.enums.ErrorCodeEnum;
 import io.github.johntortoise.core.exceptions.TortoiseBusinessException;
 import io.github.johntortoise.core.utils.EmptyUtil;
@@ -62,6 +61,9 @@ public class AdminController {
 
     @Resource
     private TortoiseTokenTotalRecordService tortoiseTokenTotalRecordService;
+
+    @Resource
+    private TortoiseToolService tortoiseToolService;
 
     @GetMapping("connect")
     public ResponseEntity<Boolean> connect(){
@@ -148,12 +150,12 @@ public class AdminController {
     }
 
     @GetMapping("/getMemoriesByConversationId")
-    public ResponseEntity<List<Message>> getMemoriesByConversationId(
+    public ResponseEntity<GetMemoriesByConversationIdResp> getMemoriesByConversationId(
             @RequestParam @NotBlank(message = "对话ID不能为空") String conversationId) {
         try {
             LogUtil.debug("获取记忆: conversationId={}", conversationId);
             List<Message> memories = tortoiseMemoryService.getMemoriesByConversationId(conversationId);
-            return ResponseEntity.ok(memories);
+            return ResponseEntity.ok(GetMemoriesByConversationIdResp.builder().messages(memories).build());
         } catch (Exception e) {
             LogUtil.error("获取记忆失败: conversationId={}", conversationId, e);
             throw e;
@@ -180,7 +182,6 @@ public class AdminController {
             Message input = new Message(mainInfo.getInput().getContent(), mainInfo.getInput().getRole());
             Message outPut = new Message(mainInfo.getOutPut().getContent(), mainInfo.getOutPut().getRole());
 
-            
             tortoiseMessageService.writeMessagesAndRecordUsage(conversationId, input, outPut,afterChatDTO);
             
             memoryReconstructionByPolicy(conversationId);
@@ -229,6 +230,16 @@ public class AdminController {
     public Boolean test() throws InterruptedException {
         Thread.sleep(30000L);
         return true;
+    }
+
+    @GetMapping("callTool")
+    public ResponseEntity<String> callTool(@RequestParam String name,String args){
+        return ResponseEntity.ok(tortoiseToolService.callTool(name,args));
+    }
+
+    @PostMapping("batchGetToolByNames")
+    public ResponseEntity<BatchGetToolByNamesResp> batchGetToolByNames(@RequestBody BatchGetToolByNamesReq batchGetToolByNamesReq){
+        return ResponseEntity.ok(tortoiseToolService.batchGetToolByNames(batchGetToolByNamesReq));
     }
 
 

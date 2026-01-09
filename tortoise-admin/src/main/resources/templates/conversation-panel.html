@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content" class="flex-1 min-w-0 flex flex-col max-h-[calc(100vh-6rem)] rounded-r-lg overflow-hidden" id="conversation-panel-root">
+	<!-- 右侧聊天区域（组件） -->
+		<!-- 聊天头部 -->
+		<div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+					<i class="fas fa-robot text-white text-sm"></i>
+				</div>
+				<div>
+					<h1 id="chat-title" class="text-lg font-semibold text-gray-900">AI助手</h1>
+					<p id="chat-subtitle" class="text-sm text-gray-500">选择聊天配置开始对话</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- 消息区域 -->
+		<div id="messages-container" class="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
+			<!-- 欢迎消息 -->
+			<div id="welcome-message" class="flex justify-center">
+				<div class="max-w-2xl text-center">
+					<div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+						<i class="fas fa-robot text-white text-2xl"></i>
+					</div>
+					<h2 class="text-2xl font-bold text-gray-900 mb-2" id="welcome-title">欢迎使用AI助手</h2>
+					<p class="text-gray-600" id="welcome-subtitle">点击"新建对话"按钮，选择聊天配置开始您的对话</p>
+					<div id="first-conversation-hint" class="hidden mt-4">
+						<div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+							<i class="fas fa-lightbulb text-blue-600"></i>
+							<span class="text-sm text-blue-700">这是您的第一个会话，请点击侧边栏的新建对话</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 消息输入区域 -->
+		<div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+			<div class="max-w-4xl mx-auto">
+				<div class="flex items-end gap-3">
+					<div class="flex-1 relative">
+						<textarea id="message-input"
+						          placeholder="输入您的消息..."
+						          class="w-full resize-none rounded-lg input-modern px-4 py-3 pr-12 min-h-[44px] max-h-32"
+						          rows="1"
+						          onkeydown="handleKeyDown(event)"></textarea>
+						<div class="absolute right-3 bottom-3 flex items-center gap-2">
+							<button id="tool-selection-button"
+							        onclick="openToolSelectionModal()"
+							        class="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full flex items-center justify-center transition-colors relative"
+							        title="选择工具">
+								<i class="fas fa-tools text-sm"></i>
+								<span id="tool-count-badge" class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+							</button>
+							<button id="send-button"
+							        onclick="sendMessage()"
+							        class="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							        disabled>
+								<i class="fas fa-paper-plane text-sm"></i>
+							</button>
+						</div>
+					</div>
+				</div>
+				<div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+					<span>按 Enter 发送，Shift + Enter 换行</span>
+					<span id="typing-indicator" class="hidden">
+						<i class="fas fa-circle-notch fa-spin mr-1"></i>
+						AI正在思考...
+					</span>
+				</div>
+			</div>
+		</div>
+	<!-- 组件内必需样式（最小集，保证在其他页面也能复用） -->
+	<style>
+		#conversation-panel-root { min-width: 0; }
+		#messages-container { min-width: 0; }
+		.message-bubble {
+			max-width: 70%;
+			padding: 1.5rem;
+			border-radius: 1rem;
+			position: relative;
+			overflow-wrap: anywhere;
+			word-wrap: break-word;
+			word-break: break-word;
+			overflow: hidden;
+		}
+		.message-bubble.user {
+			background: #f3f4f6;
+			color: #374151;
+			margin-left: auto;
+		}
+		.message-bubble.assistant {
+			background: white;
+			border: 1px solid #e5e7eb;
+			color: #374151;
+		}
+		.message-content {
+			overflow-wrap: anywhere;
+			word-wrap: break-word;
+			word-break: break-word;
+		}
+		.message-avatar {
+			width: 2rem;
+			height: 2rem;
+			border-radius: 50%;
+			flex-shrink: 0;
+		}
+		.message-avatar.user {
+			background: #f3f4f6;
+			color: #374151;
+		}
+		.message-avatar.assistant {
+			background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+			color: white;
+		}
+		.message-actions {
+			opacity: 0;
+			transition: opacity 0.2s ease;
+		}
+		.message-bubble:hover .message-actions {
+			opacity: 1;
+		}
+		.message-events { margin-top: 0.5rem; }
+		.events-list .event-item { transition: all 0.2s ease; }
+		.events-list .event-item:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+		.event-content pre {
+			white-space: pre-wrap;
+			word-break: break-all;
+			max-height: 200px;
+			overflow-y: auto;
+		}
+		.message-blocks { margin-bottom: 0.5rem; }
+		.message-blocks > * + * { margin-top: 0.5rem; }
+	</style>
+
+	<!-- 组件脚本：封装“消息分页查询”和“按消息ID查询事件”两个接口调用 -->
+	<script th:inline="javascript">
+		(function () {
+			const root = document.getElementById('conversation-panel-root');
+			const messagesContainer = document.getElementById('messages-container');
+			const welcomeMessage = document.getElementById('welcome-message');
+
+			function formatMessageContent(content) {
+				if (!content) return '';
+				return content.replace(/\n/g, '<br>');
+			}
+
+			function scrollToBottom() {
+				if (!messagesContainer) return;
+				messagesContainer.scrollTop = messagesContainer.scrollHeight;
+			}
+
+			function renderMessages(messages) {
+				if (!messagesContainer) return;
+				messagesContainer.innerHTML = messages.map(message => `
+					<div class="flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}">
+						${message.role !== 'user' ? `
+							<div class="message-avatar assistant flex items-center justify-center">
+								<i class="fas fa-robot text-sm"></i>
+							</div>
+						` : ''}
+						<div class="message-bubble ${message.role === 'user' ? 'user' : 'assistant'}">
+							${message.role === 'assistant' ? `
+								<div class="message-events" id="chat-events-${message.id}" style="display: none;">
+									<div class="events-loading text-xs text-gray-500 mb-2 p-2 bg-gray-50 rounded">
+										<i class="fas fa-spinner fa-spin mr-1"></i>
+										加载事件详情...
+									</div>
+									<div class="events-content hidden"></div>
+								</div>
+							` : ''}
+							<div class="message-content">
+								${formatMessageContent(message.content)}
+							</div>
+							${message.role === 'assistant' ? `
+								<div class="message-actions mt-2 flex justify-end">
+									<button onclick="ConversationPanel.toggleMessageEvents(${message.id})"
+									        class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 transition-colors flex items-center gap-1">
+										<span>详情</span>
+										<i class="fas fa-chevron-down text-xs transform transition-transform duration-200"></i>
+									</button>
+								</div>
+							` : ''}
+						</div>
+						${message.role === 'user' ? `
+							<div class="message-avatar user flex items-center justify-center">
+								<i class="fas fa-user text-sm"></i>
+							</div>
+						` : ''}
+					</div>
+				`).join('');
+
+				// 隐藏欢迎
+				if (welcomeMessage) welcomeMessage.style.display = 'none';
+				scrollToBottom();
+			}
+
+			function formatEventContent(content) {
+				if (!content) return '';
+				try {
+					const parsed = JSON.parse(content);
+					return `<pre class="text-xs overflow-x-auto whitespace-pre-wrap">${JSON.stringify(parsed, null, 2)}</pre>`;
+				} catch (e) {
+					return content.replace(/\n/g, '<br>');
+				}
+			}
+
+			function renderMessageEvents(events, container) {
+				if (!events || events.length === 0) {
+					container.innerHTML = `
+						<div class="text-center text-gray-500 py-4">
+							<i class="fas fa-info-circle mb-1"></i>
+							<p class="text-xs">暂无事件数据</p>
+						</div>
+					`;
+					return;
+				}
+
+				container.innerHTML = `
+					<div class="events-list space-y-2 mb-2">
+						${events.map(event => {
+							// 对于 message 类型的事件，直接展示内容，不加框
+							if (event.eventType === 'message') {
+								return `<div class="message-content">${formatEventContent(event.content)}</div>`;
+							}
+
+							let eventClass = 'bg-gray-50';
+							let eventTextClass = 'text-gray-900';
+							let displayType = event.eventType || '未知事件';
+							if (event.eventType === 'reasoningContent') {
+								eventClass = 'bg-gray-100';
+								eventTextClass = 'text-gray-700';
+								displayType = 'think';
+							} else if (event.eventType === 'tortoiseMsg') {
+								eventClass = 'bg-blue-50';
+								eventTextClass = 'text-blue-900';
+								displayType = 'system msg';
+							}
+							return `
+							<div class="event-item ${eventClass} border border-gray-200 rounded p-3">
+								<div class="flex items-center justify-between mb-1">
+									<h5 class="font-medium ${eventTextClass} text-sm">${displayType}</h5>
+									<span class="text-xs text-gray-500">${event.timestamp ? new Date(event.timestamp).toLocaleString('zh-CN') : ''}</span>
+								</div>
+								${event.content ? `
+									<div class="event-content text-xs text-gray-700 bg-white p-2 rounded border mt-1">
+										${formatEventContent(event.content)}
+									</div>
+								` : ''}
+							</div>
+						`}).join('')}
+					</div>
+				`;
+			}
+
+			// 暴露到全局的组件API
+			window.ConversationPanel = {
+				loadMessages: function (conversationId) {
+					if (!conversationId) return;
+					authenticatedFetch(`/api/messages/page?conversationId=${conversationId}&page=1&size=100`)
+						.then(response => response.json())
+						.then(data => {
+							if (data.code === 200 && data.data.records) {
+								renderMessages(data.data.records);
+							}
+						})
+						.catch(() => {
+							showToast('加载消息失败', false);
+						});
+				},
+				toggleMessageEvents: function (messageId) {
+					const eventsContainer = document.getElementById(`chat-events-${messageId}`);
+					if (!eventsContainer) return;
+					const button = eventsContainer.parentElement.querySelector('.message-actions button i');
+					const isExpanded = eventsContainer.style.display !== 'none';
+					if (isExpanded) {
+						eventsContainer.style.display = 'none';
+						if (button) button.classList.remove('rotate-180');
+					} else {
+						eventsContainer.style.display = 'block';
+						if (button) button.classList.add('rotate-180');
+						const eventsContent = eventsContainer.querySelector('.events-content');
+						if (eventsContent && eventsContent.classList.contains('hidden')) {
+							window.ConversationPanel.loadMessageEvents(messageId);
+						}
+					}
+				},
+				loadMessageEvents: function (messageId) {
+					const eventsContainer = document.getElementById(`chat-events-${messageId}`);
+					if (!eventsContainer) return;
+					const loadingElement = eventsContainer.querySelector('.events-loading');
+					const eventsContent = eventsContainer.querySelector('.events-content');
+					authenticatedFetch(`/api/messages/getEventsByMessageId?messageId=${messageId}`)
+						.then(response => response.json())
+						.then(data => {
+							if (loadingElement) loadingElement.style.display = 'none';
+							if (eventsContent) eventsContent.classList.remove('hidden');
+							if (data.code === 200 && data.data) {
+								renderMessageEvents(data.data, eventsContent);
+							} else {
+								eventsContent.innerHTML = `
+									<div class="text-center text-gray-500 py-4">
+										<i class="fas fa-info-circle mb-1"></i>
+										<p class="text-xs">暂无事件数据</p>
+									</div>
+								`;
+							}
+						})
+						.catch(() => {
+							if (loadingElement) loadingElement.style.display = 'none';
+							if (eventsContent) {
+								eventsContent.classList.remove('hidden');
+								eventsContent.innerHTML = `
+									<div class="text-center text-red-500 py-4">
+										<i class="fas fa-exclamation-triangle mb-1"></i>
+										<p class="text-xs">加载失败</p>
+									</div>
+								`;
+							}
+						});
+				}
+			};
+		})();
+	</script>
+</div>
+</html>
+

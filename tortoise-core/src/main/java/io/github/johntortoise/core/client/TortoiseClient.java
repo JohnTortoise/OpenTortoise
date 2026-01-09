@@ -5,12 +5,8 @@ import io.github.johntortoise.admin.TortoiseAdminClient;
 import io.github.johntortoise.core.callback.StreamCallBack;
 import io.github.johntortoise.core.client.llm.CompleteLLMApiClient;
 import io.github.johntortoise.core.client.llm.StreamLLMApiClient;
-import io.github.johntortoise.core.dto.model.Message;
-import io.github.johntortoise.core.dto.model.Model;
-import io.github.johntortoise.core.dto.sys.AfterChatDTO;
-import io.github.johntortoise.core.dto.sys.ConversationContext;
-import io.github.johntortoise.core.dto.sys.ReceiveMessageReq;
-import io.github.johntortoise.core.dto.sys.TortoiseMessage;
+import io.github.johntortoise.core.dto.model.*;
+import io.github.johntortoise.core.dto.sys.*;
 import io.github.johntortoise.core.enums.ErrorCodeEnum;
 import io.github.johntortoise.core.exceptions.TortoiseBusinessException;
 import io.github.johntortoise.core.manger.chat.TortoiseChatManger;
@@ -18,14 +14,18 @@ import io.github.johntortoise.core.manger.chat.impl.AdminTortoiseChatManger;
 import io.github.johntortoise.core.manger.chat.impl.DefaultTortoiseChatManger;
 import io.github.johntortoise.core.message.TortoiseMessageHandler;
 import io.github.johntortoise.core.message.impl.DefaultTortoiseMessageHandler;
+import io.github.johntortoise.core.utils.EmptyUtil;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.core.utils.ObjectMapperUtil;
+import io.github.johntortoise.core.utils.StreamUtil;
 import io.github.johntortoise.core.valid.BeforeChatValid;
 import io.github.johntortoise.core.valid.chain.ValidationChain;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 @Data
 public class TortoiseClient<T>  {
@@ -75,39 +75,56 @@ public class TortoiseClient<T>  {
 
 
 
-    public T chat(TortoiseMessage tortoiseMessage, Model model){
-        if(tortoiseChatManger.checkLimit(tortoiseMessage.getConversationId())){
-            throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,"超过token上限");
-        }
+    public T chat(TortoiseMessage tortoiseMessage, Model model) {
+        return chat(tortoiseMessage, model, null);
+    }
+
+    public T chat(TortoiseMessage tortoiseMessage, Model model, List<Tool> tools) {
+        Message input = new Message(tortoiseMessage.getMessage().getContent(), tortoiseMessage.getMessage().getRole());
         String conversationId = tortoiseMessage.getConversationId();
-
-        performPreValidation(tortoiseMessage,model);
-
         List<Message> historyMemory = tortoiseChatManger.findHistoryChat(conversationId);
 
-        Message input = new Message(tortoiseMessage.getMessage().getContent(), tortoiseMessage.getMessage().getRole());
-        ConversationContext context = buildConversationContext(historyMemory,input,conversationId, model);
+        beforeCall(tortoiseMessage, model);
 
-        String llmResp =  CompleteLLMApiClient.invoke(context);
+        ConversationContext context = buildConversationContext(historyMemory, input, conversationId, model, tools);
+
+        LLmInvokeResp lLmInvokeResp = CompleteLLMApiClient.invokeBase(context,tortoiseChatManger::toolCallInvoke);
+
+        String llmResp = lLmInvokeResp.getLastResp();
 
         tortoiseChatManger.afterChat(
                 AfterChatDTO.builder()
-                        .mainInfo(this.tortoiseMessageHandler.convertForMainInfo(historyMemory,input,llmResp,null))
+                        .mainInfo(this.tortoiseMessageHandler.convertForMainInfo(historyMemory, input, llmResp, null))
+                        .allChatInfo(lLmInvokeResp.getAllChatList())
+                        .toolCallMessages(context.getToolCallMessage())
+                        .events(lLmInvokeResp.getEventLists())
                         .conversationId(conversationId)
                         .build());
 
         return this.tortoiseMessageHandler.convertForResult(llmResp);
-
     }
 
+
+
+    public void  beforeCall(TortoiseMessage tortoiseMessage,Model model){
+        if(tortoiseChatManger.checkLimit(tortoiseMessage.getConversationId())){
+            throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,"超过token上限");
+        }
+        performPreValidation(tortoiseMessage,model);
+    }
 
     public T chatForAdmin(TortoiseMessage tortoiseMessage){
         Model model = tortoiseAdminClient.findModel(tortoiseMessage.getConversationId());
         return chat(tortoiseMessage,model);
     }
 
+    public T chatForAdmin(TortoiseMessage tortoiseMessage,List<String> toolNames){
+        Model model = tortoiseAdminClient.findModel(tortoiseMessage.getConversationId());
+        List<Tool> tools = tortoiseAdminClient.batchGetToolByNames(toolNames);
+        return chat(tortoiseMessage,model,tools);
+    }
 
-    public void chatStream(TortoiseMessage tortoiseMessage, Model model, StreamCallBack streamCallBack){
+    public String chatStream(TortoiseMessage tortoiseMessage, Model model, StreamCallBack streamCallBack,List<Tool> tools){
         if(tortoiseChatManger.checkLimit(tortoiseMessage.getConversationId())){
             throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,"超过上限");
         }
@@ -119,54 +136,57 @@ public class TortoiseClient<T>  {
 
         Message input = new Message(tortoiseMessage.getMessage().getContent(), tortoiseMessage.getMessage().getRole());
 
-        ConversationContext context = buildConversationContext(historyMemory,input,conversationId, model);
-        StreamLLMApiClient.invoke(context,streamCallBack, new StreamCallBack() {
-            final List<String> result = new ArrayList<>();
-            @Override
-            public void send(String content) {
-                result.add(content);
-            }
+        ConversationContext context = buildConversationContext(historyMemory,input,conversationId, model,tools);
 
-            @Override
-            public void finish(){
-                try {
-                    ObjectMapper objectMapper = ObjectMapperUtil.createObjectMapper();
-                    String llmResp = objectMapper.writeValueAsString(result);
-                    tortoiseChatManger.afterChat(
-                            AfterChatDTO.builder()
-                                    .mainInfo(tortoiseMessageHandler.convertForMainInfo(historyMemory,input,llmResp, streamCallBack))
-                                    .conversationId(conversationId)
-                                    .build());
-                }catch (Exception e){
-                    LogUtil.error("格式化失败",e);
-                }
-            }
-            @Override
-            public void onFailure() {
+        LLmInvokeResp lLmInvokeResp = StreamLLMApiClient.invokeBase(context, streamCallBack,tortoiseChatManger::toolCallInvoke);
 
-            }
-        });
+
+        String llmResp = lLmInvokeResp.getLastResp();
+
+        tortoiseChatManger.afterChat(
+                AfterChatDTO.builder()
+                        .mainInfo(this.tortoiseMessageHandler.convertForMainInfo(historyMemory, input, llmResp, null))
+                        .allChatInfo(lLmInvokeResp.getAllChatList())
+                        .toolCallMessages(context.getToolCallMessage())
+                        .events(lLmInvokeResp.getEventLists())
+                        .conversationId(conversationId)
+                        .build());
+
+        streamCallBack.finish();
+
+        return llmResp;
+    }
+
+
+    public String chatStream(TortoiseMessage tortoiseMessage, Model model, StreamCallBack streamCallBack){
+        return chatStream(tortoiseMessage,model,streamCallBack,null);
     }
 
 
 
-    public void chatStreamForAdmin(TortoiseMessage tortoiseMessage, StreamCallBack streamCallBack){
+    public String chatStreamForAdmin(TortoiseMessage tortoiseMessage, StreamCallBack streamCallBack){
         Model model = tortoiseAdminClient.findModel(tortoiseMessage.getConversationId());
-        chatStream(tortoiseMessage,model,streamCallBack);
+        return chatStream(tortoiseMessage,model,streamCallBack);
+    }
+
+    public void chatStreamForAdmin(TortoiseMessage tortoiseMessage, StreamCallBack streamCallBack,List<String> toolNames){
+        Model model = tortoiseAdminClient.findModel(tortoiseMessage.getConversationId());
+        List<Tool> tools = tortoiseAdminClient.batchGetToolByNames(toolNames);
+        chatStream(tortoiseMessage,model,streamCallBack,tools);
     }
 
 
     private ConversationContext buildConversationContext(List<Message> history, Message input,
                                                          String conversationId,
-                                                         Model model) {
-        ArrayList<Message> messages = new ArrayList<>(history);
-        messages.add(input);
-
+                                                         Model model,List<Tool> tools) {
         return ConversationContext.builder()
-                .messages(messages)
+                .historyMessage(history)
+                .input(input)
+                .toolCallMessage(new ArrayList<>())
                 .modelConfig(model)
                 .conversationId(conversationId)
                 .timestamp(System.currentTimeMillis())
+                .tools(tools)
                 .build();
     }
 

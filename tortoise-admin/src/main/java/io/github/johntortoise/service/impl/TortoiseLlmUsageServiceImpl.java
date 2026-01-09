@@ -5,9 +5,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.johntortoise.core.dto.model.ChatCompletionResponse;
 import io.github.johntortoise.core.dto.model.MainInfo;
 import io.github.johntortoise.core.dto.model.Message;
+import io.github.johntortoise.core.dto.model.Usage;
 import io.github.johntortoise.core.dto.sys.AfterChatDTO;
+import io.github.johntortoise.core.dto.sys.LLmInvokeResp;
 import io.github.johntortoise.core.enums.ErrorCodeEnum;
 import io.github.johntortoise.core.exceptions.TortoiseBusinessException;
 import io.github.johntortoise.core.utils.LogUtil;
@@ -56,22 +59,24 @@ public class TortoiseLlmUsageServiceImpl extends ServiceImpl<TortoiseLlmUsageMap
 
     @Resource
     private TortoiseTokenTotalRecordService tortoiseTokenTotalRecordService;
-    
+
     @Override
     public List<TortoiseLlmUsage> getUsageByConversationId(String conversationId) {
         return baseMapper.selectByConversationId(conversationId);
     }
-    
+
     @Override
     public Page<TortoiseLlmUsageDTO> page(String conversationId, Long current, Long size) {
 
         LambdaQueryWrapper<TortoiseLlmUsage> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(TortoiseLlmUsage::getIsDeleted, DeletedEnum.EXIST.getCode())
-                .orderByDesc(TortoiseLlmUsage::getCreateTime);
-        
+                .orderByDesc(TortoiseLlmUsage::getCreateTime)
+                .orderByDesc(TortoiseLlmUsage::getId);
+
         if (conversationId != null && !conversationId.isEmpty()) {
             queryWrapper.eq(TortoiseLlmUsage::getConversationId, conversationId);
         }
+
 
         Page<TortoiseLlmUsage> page = this.page(new Page<>(current, size), queryWrapper);
 
@@ -90,30 +95,26 @@ public class TortoiseLlmUsageServiceImpl extends ServiceImpl<TortoiseLlmUsageMap
                 usage -> TortoiseLlmUsage.covertToDTO(usage, finalModelIdToModelNameMap));
     }
 
-    
-    @Override
-    public void recordUsage(AfterChatDTO afterChatDTO, TortoiseLlmUsageEnum tortoiseLlmUsageEnum) {
-        try{
-            LogUtil.info("recordUsageReq :{}",afterChatDTO);
 
-            TortoiseConversationDTO conversation = tortoiseConversationService.getByConversationId(afterChatDTO.getConversationId());
+
+    @Override
+    public TortoiseLlmUsage generateDetail(String req, String reply, TortoiseLlmUsageEnum tortoiseLlmUsageEnum, String conversationId) {
+        try {
+            TortoiseConversationDTO conversation = tortoiseConversationService.getByConversationId(conversationId);
             if(Objects.isNull(conversation)){
                 throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,"会话不存在");
             }
+            TortoiseLlmConfig llmConfig = findLlmConfig(tortoiseLlmUsageEnum, conversation);
 
-            saveDetail(afterChatDTO,
-                    findLlmConfig(tortoiseLlmUsageEnum,conversation),
-                    tortoiseLlmUsageEnum,
-                    buildRequestMessage(afterChatDTO),
-                    afterChatDTO.getMainInfo().getOutPut());
-
-            saveTotal(afterChatDTO.getMainInfo().getTokens(),conversation);
+            ChatCompletionResponse chatCompletionResponse = ObjectMapperUtil.createObjectMapper().readValue(reply, ChatCompletionResponse.class);
+            return generateDetailCore(req, chatCompletionResponse, conversationId, llmConfig, tortoiseLlmUsageEnum);
 
         }catch (Exception e){
-            LogUtil.error("recordUsage",e);
+            LogUtil.error("generateDetail",e);
             throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,e);
         }
     }
+
 
     @Override
     public TortoiseLlmUsage queryFirstUsageByLLmConfigId(Long llmConfigId) {
@@ -131,6 +132,51 @@ public class TortoiseLlmUsageServiceImpl extends ServiceImpl<TortoiseLlmUsageMap
         }
         return history;
     }
+
+
+
+    public TortoiseLlmUsage generateDetailCore(String req,ChatCompletionResponse chatCompletionResponse,String conversationId,TortoiseLlmConfig llmConfig,TortoiseLlmUsageEnum tortoiseLlmUsageEnum){
+        try {
+            Usage usage = chatCompletionResponse.getUsage();
+
+            Integer inputToken = usage.getPromptTokens();
+            Integer outPutToken = usage.getCompletionTokens();
+            Integer cacheToken = Optional.ofNullable(usage.getPromptTokensDetails()).map(Usage.PromptTokensDetails::getCachedTokens).orElse(0);
+            Integer totalToken = usage.getTotalTokens();
+
+            BigDecimal inputCost = llmConfig.getInputUnitPrice()
+                    .multiply(BigDecimal.valueOf(inputToken));
+            BigDecimal outputCost = llmConfig.getOutputUnitPrice()
+                    .multiply(BigDecimal.valueOf(outPutToken));
+            BigDecimal cacheCost = llmConfig.getCachePrice()
+                    .multiply(BigDecimal.valueOf(cacheToken));
+
+            BigDecimal totalCost = inputCost.add(outputCost).add(cacheCost);
+
+            ObjectMapper objectMapper = ObjectMapperUtil.createObjectMapper();
+
+            return TortoiseLlmUsage.builder()
+                    .conversationId(conversationId)
+                    .configId(llmConfig.getId())
+                    .inputTokens(inputToken)
+                    .outputTokens(outPutToken)
+                    .totalTokens(totalToken)
+                    .inputCost(inputCost)
+                    .type(tortoiseLlmUsageEnum.getId())
+                    .outputCost(outputCost)
+                    .totalCost(totalCost)
+                    .requestContent(req)
+                    .responseContent(objectMapper.writeValueAsString(chatCompletionResponse))
+                    .isDeleted(DeletedEnum.EXIST.getCode())
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .build();
+        }catch (Exception e){
+            LogUtil.error("generateDetailCore",e);
+            throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,e);
+        }
+    }
+
 
     public void saveDetail(AfterChatDTO afterChatDTO, TortoiseLlmConfig llmConfig, TortoiseLlmUsageEnum tortoiseLlmUsageEnum, List<Message> history, Message outPut){
         try {

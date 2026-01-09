@@ -1,0 +1,918 @@
+<div th:fragment="content">
+    <div class="px-4 py-6 sm:px-0">
+        <!-- Page Header -->
+        <div class="config-header relative">
+            <div class="relative z-10">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
+                            <i class="fas fa-tools text-2xl"></i>
+                            工具管理
+                        </h1>
+                        <p class="text-blue-100">管理系统工具配置</p>
+                    </div>
+                    <button id="add-tool-btn" 
+                            class="mt-4 sm:mt-0 btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
+                        <i class="fas fa-plus mr-2"></i>
+                        新增工具
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Form -->
+        <div class="config-card search-card p-6 mb-6">
+            <h3 class="form-title">
+                <i class="fas fa-search text-blue-600"></i>
+                搜索工具
+            </h3>
+            <form id="tool-search-form" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <label for="tool-name-search" class="block text-sm font-semibold text-gray-700 mb-2">工具名称</label>
+                    <input type="text" id="tool-name-search" name="toolName" 
+                           class="input-modern w-full"
+                           placeholder="请输入工具名称">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full btn-primary py-3 px-6 rounded-lg text-white font-medium shadow-lg">
+                        <i class="fas fa-search mr-2"></i>搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tool Table -->
+        <div class="config-card table-modern">
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">工具名称</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">描述</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tools-table-body">
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <p class="text-lg font-medium text-gray-600">加载中...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-end mt-4">
+                <div id="tools-pagination-container" class="flex items-center justify-between">
+                    <!-- Pagination will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Tool Modal -->
+    <div id="tool-modal" class="modal-modern fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen p-4 text-center">
+            <div class="fixed inset-0 bg-black bg-opacity-25" aria-hidden="true"></div>
+
+            <div class="modal-content text-left overflow-hidden sm:max-w-2xl sm:w-full max-h-[90vh] flex flex-col">
+                <!-- Scrollable Content Area -->
+                <div class="flex-1 overflow-y-auto smooth-scroll">
+                    <div class="p-6">
+                    <form id="tool-form">
+                        <input type="hidden" id="tool-form-id">
+
+                        <!-- Quick Import Section -->
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6 border border-blue-100">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-magic text-blue-600"></i>
+                                </div>
+                                <h3 class="text-sm font-semibold text-gray-800">一键导入</h3>
+                            </div>
+                            <div class="flex gap-3">
+                                <textarea id="curl-input"
+                                          class="flex-1 px-4 py-3 text-sm border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 focus:outline-none resize-none transition-all duration-200 shadow-sm hover:shadow-md focus:shadow-lg bg-white"
+                                          rows="2"
+                                          placeholder="粘贴 curl 命令，自动解析接口信息"></textarea>
+                                <button type="button" id="parse-curl-btn"
+                                        class="px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-xl transition-all duration-200 flex-shrink-0 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                    <i class="fas fa-magic mr-2"></i>解析
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="space-y-2">
+                                <label for="tool-form-name" class="text-sm font-medium text-gray-700 flex items-center">
+                                    工具名称 <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <input type="text" id="tool-form-name" required
+                                       class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                       placeholder="请输入工具名称">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label for="tool-form-method" class="text-sm font-medium text-gray-700 flex items-center">
+                                    请求方法 <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text" id="tool-form-method-input"
+                                           placeholder="选择请求方法"
+                                           class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer transition-all"
+                                           readonly>
+                                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                    <div id="tool-form-method-dropdown"
+                                         class="absolute z-50 mt-1 w-full bg-white shadow-xl rounded-lg py-1 text-sm border border-gray-200 hidden">
+                                        <div class="search-dropdown-item px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors" data-value="GET">
+                                            <span class="inline-block w-16 px-2 py-1 text-xs font-medium rounded">GET</span>
+                                        </div>
+                                        <div class="search-dropdown-item px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors" data-value="POST">
+                                            <span class="inline-block w-16 px-2 py-1 text-xs font-medium rounded">POST</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="tool-form-method" required>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mb-6">
+                            <label for="tool-form-desc" class="text-sm font-medium text-gray-700 flex items-center">
+                                工具描述 <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <textarea id="tool-form-desc" required
+                                      class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
+                                      rows="3"
+                                      placeholder="简要描述工具的功能用途"></textarea>
+                        </div>
+
+                        <div class="space-y-2 mb-6">
+                            <label for="tool-form-url" class="text-sm font-medium text-gray-700 flex items-center">
+                                请求URL <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <input type="text" id="tool-form-url" required
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                   placeholder="https://api.example.com/endpoint">
+                        </div>
+
+                        <!-- Headers Section -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="text-sm font-medium text-gray-700">请求头</label>
+                                <button type="button" id="add-header-btn"
+                                        class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors">
+                                    <i class="fas fa-plus mr-1"></i>添加请求头
+                                </button>
+                            </div>
+                            <div id="headers-container" class="space-y-2 min-h-[40px]">
+                                <!-- Headers will be added dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Field Config Section -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="text-sm font-medium text-gray-700">字段配置</label>
+                                <button type="button" id="add-field-btn"
+                                        class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors">
+                                    <i class="fas fa-plus mr-1"></i>添加字段
+                                </button>
+                            </div>
+                            <div id="fields-container" class="space-y-3 min-h-[40px]">
+                                <!-- Fields will be added dynamically -->
+                            </div>
+                        </div>
+                    </form>
+                    </div>
+                </div>
+
+                <!-- Fixed Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse gap-3 flex-shrink-0 border-t border-gray-200">
+                    <button type="button" id="save-tool-btn"
+                            class="btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
+                        保存
+                    </button>
+                    <button type="button" id="cancel-tool-btn"
+                            class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:inline="javascript">
+        (function() {
+            let currentSearch = {
+                toolName: ''
+            };
+            let isPageActive = false;
+            let currentPage = 1;
+            let currentPageSize = 5;
+            let isEditMode = false;
+            let initialized = false;
+            
+            let searchForm, toolsTableBody, toolsPaginationContainer, addToolBtn, toolModal;
+            let toolForm, saveToolBtn, cancelToolBtn, parseCurlBtn;
+            let headersContainer, fieldsContainer;
+            let toolsPagination; // 分页组件实例
+            
+            function initElements() {
+                if (!searchForm) searchForm = document.getElementById('tool-search-form');
+                if (!toolsTableBody) toolsTableBody = document.getElementById('tools-table-body');
+                if (!toolsPaginationContainer) toolsPaginationContainer = document.getElementById('tools-pagination-container');
+                if (!addToolBtn) addToolBtn = document.getElementById('add-tool-btn');
+                if (!toolModal) toolModal = document.getElementById('tool-modal');
+                if (!toolForm) toolForm = document.getElementById('tool-form');
+                if (!saveToolBtn) saveToolBtn = document.getElementById('save-tool-btn');
+                if (!cancelToolBtn) cancelToolBtn = document.getElementById('cancel-tool-btn');
+                if (!parseCurlBtn) parseCurlBtn = document.getElementById('parse-curl-btn');
+                if (!headersContainer) headersContainer = document.getElementById('headers-container');
+                if (!fieldsContainer) fieldsContainer = document.getElementById('fields-container');
+
+                if (searchForm && !initialized) {
+                    searchForm.addEventListener('submit', handleSearch);
+
+                    if (addToolBtn) {
+                        addToolBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            openAddModal();
+                        });
+                    }
+
+                    if (saveToolBtn) saveToolBtn.addEventListener('click', saveTool);
+                    if (cancelToolBtn) cancelToolBtn.addEventListener('click', closeToolModal);
+                    if (parseCurlBtn) parseCurlBtn.addEventListener('click', parseCurl);
+
+                    // 点击弹窗背景关闭弹窗
+                    toolModal.addEventListener('click', function(e) {
+                        if (e.target === toolModal) {
+                            closeToolModal();
+                        }
+                    });
+
+                    // ESC键关闭弹窗
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape' && !toolModal.classList.contains('hidden')) {
+                            closeToolModal();
+                        }
+                    });
+
+                    // Add header and field buttons
+                    const addHeaderBtn = document.getElementById('add-header-btn');
+                    if (addHeaderBtn) {
+                        addHeaderBtn.addEventListener('click', addHeaderRow);
+                    }
+                    const addFieldBtn = document.getElementById('add-field-btn');
+                    if (addFieldBtn) {
+                        addFieldBtn.addEventListener('click', addFieldRow);
+                    }
+
+                    initialized = true;
+                }
+            }
+            
+            function doInit() {
+                initElements();
+                setupMethodDropdown();
+                initPagination();
+                const pageElement = document.getElementById('tool-management-page');
+                if (pageElement && pageElement.classList.contains('active-page')) {
+                    isPageActive = true;
+                    loadTools(1);
+                }
+            }
+
+            function initPagination() {
+                if (toolsPaginationContainer && !toolsPagination) {
+                    toolsPagination = new PaginationComponent({
+                        container: toolsPaginationContainer,
+                        currentPage: currentPage,
+                        pageSize: currentPageSize,
+                        onPageChange: (page) => {
+                            loadTools(page);
+                        },
+                        onPageSizeChange: (pageSize) => {
+                            currentPageSize = pageSize;
+                            currentPage = 1;
+                            loadTools(currentPage);
+                        }
+                    });
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', doInit);
+            
+            document.addEventListener('pageChanged', function(e) {
+                if (e.detail === 'tool-management') {
+                    initialized = false;
+                    doInit();
+                } else {
+                    isPageActive = false;
+                }
+            });
+            
+            function handleSearch(e) {
+                try {
+                    e.preventDefault();
+                    const toolNameInput = document.getElementById('tool-name-search');
+                    if (!toolNameInput) {
+                        return;
+                    }
+                    currentSearch.toolName = toolNameInput.value.trim();
+                    currentPage = 1;
+                    loadTools(currentPage);
+                } catch (error) {
+                    console.error('搜索过程中发生错误:', error);
+                }
+            }
+            
+            function loadTools(page) {
+                currentPage = page;
+                if (!toolsTableBody) {
+                    toolsTableBody = document.getElementById('tools-table-body');
+                }
+                if (!toolsTableBody) {
+                    return;
+                }
+
+                toolsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-8 text-center">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <p class="text-lg font-medium text-gray-600">加载中...</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                const params = new URLSearchParams({
+                    pageNum: page,
+                    pageSize: currentPageSize
+                });
+
+                if (currentSearch.toolName) {
+                    params.append('toolName', currentSearch.toolName);
+                }
+
+                authenticatedFetch(`/api/tool/page?${params.toString()}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载工具列表失败');
+                            }
+                        }
+                        
+                        if (actualData && (actualData.records || actualData.data)) {
+                            const pageData = actualData.records ? actualData : actualData.data;
+                            renderToolsTable(pageData);
+                            renderPagination(pageData);
+                        } else {
+                            if (toolsTableBody) {
+                                toolsTableBody.innerHTML = `
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-8 text-center">
+                                            <div class="empty-state">
+                                                <p class="text-lg font-medium text-gray-600">暂无数据</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        if (toolsTableBody) {
+                            toolsTableBody.innerHTML = `
+                                <tr>
+                                    <td colspan="4" class="px-6 py-8 text-center">
+                                        <div class="empty-state">
+                                            <p class="text-lg font-medium text-gray-600">加载失败，请刷新页面重试</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                        if (toolsPaginationContainer) {
+                            toolsPaginationContainer.innerHTML = '';
+                        }
+                    });
+            }
+            
+            function renderToolsTable(pageData) {
+                if (!toolsTableBody) {
+                    toolsTableBody = document.getElementById('tools-table-body');
+                }
+                if (!toolsTableBody) {
+                    return;
+                }
+
+                ensureEventDelegation();
+                
+                if (!pageData || !pageData.records || pageData.records.length === 0) {
+                    toolsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center">
+                                <div class="empty-state">
+                                    <p class="text-lg font-medium text-gray-600">暂无数据</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                const escapeHtml = (text) => {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                };
+                
+                toolsTableBody.innerHTML = pageData.records.map(tool => {
+                    const toolName = escapeHtml(tool.toolName || '');
+                    const desc = escapeHtml(tool.desc || '');
+                    return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${tool.id || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${toolName}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${desc}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="edit-tool-btn text-blue-600 hover:text-blue-900"
+                                    data-tool-id="${tool.id}">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                }).join('');
+            }
+            
+            function renderPagination(pageData) {
+                if (!toolsPagination) {
+                    initPagination();
+                }
+                if (toolsPagination) {
+                    toolsPagination.render(pageData);
+                }
+            }
+            
+            function openAddModal() {
+                initElements();
+
+                if (!toolModal || !toolForm) {
+                    alert('无法打开弹窗，请刷新页面重试');
+                    return;
+                }
+
+                isEditMode = false;
+                toolForm.reset();
+                const formId = document.getElementById('tool-form-id');
+                if (formId) formId.value = '';
+
+                document.getElementById('curl-input').value = '';
+
+                // 重置请求方法下拉框
+                document.getElementById('tool-form-method-input').value = '';
+                document.getElementById('tool-form-method').value = '';
+
+                clearHeaders();
+                clearFields();
+
+                // 防止背景滚动
+                document.body.style.overflow = 'hidden';
+                toolModal.classList.remove('hidden');
+                // 使用requestAnimationFrame确保DOM更新后再添加active类
+                requestAnimationFrame(() => {
+                    toolModal.classList.add('active');
+                });
+            }
+            
+            function editTool(id) {
+                initElements();
+                if (!toolModal || !toolForm) {
+                    return;
+                }
+                
+                authenticatedFetch(`/api/tool/detail?id=${id}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        let toolData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                toolData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载工具详情失败');
+                            }
+                        }
+                        
+                        isEditMode = true;
+
+                        const formId = document.getElementById('tool-form-id');
+                        if (formId) formId.value = id;
+                        document.getElementById('tool-form-name').value = toolData.name || '';
+                        document.getElementById('tool-form-desc').value = toolData.desc || '';
+                        document.getElementById('tool-form-url').value = toolData.url || '';
+
+                        // 设置请求方法的值和显示文本
+                        const method = toolData.method || '';
+                        document.getElementById('tool-form-method').value = method;
+                        document.getElementById('tool-form-method-input').value = method;
+
+                        document.getElementById('curl-input').value = '';
+                        
+                        // Load headers
+                        clearHeaders();
+                        if (toolData.headers && toolData.headers.length > 0) {
+                            toolData.headers.forEach(header => {
+                                addHeaderRow(header.name, header.value);
+                            });
+                        }
+                        
+                        // Load fields
+                        clearFields();
+                        if (toolData.fieldConfig && toolData.fieldConfig.length > 0) {
+                            toolData.fieldConfig.forEach(field => {
+                                addFieldRow(field.name, field.description, field.type, field.required);
+                            });
+                        }
+
+                        // 防止背景滚动
+                        document.body.style.overflow = 'hidden';
+                        toolModal.classList.remove('hidden');
+                        // 使用requestAnimationFrame确保DOM更新后再添加active类
+                        requestAnimationFrame(() => {
+                            toolModal.classList.add('active');
+                        });
+                    })
+                    .catch(error => {
+                        showToast('加载工具详情失败', false);
+                    });
+            }
+            
+            function setupMethodDropdown() {
+                const methodInput = document.getElementById('tool-form-method-input');
+                const methodDropdown = document.getElementById('tool-form-method-dropdown');
+                const methodHidden = document.getElementById('tool-form-method');
+
+                // 初始化默认值（空）
+                methodInput.value = '';
+                methodHidden.value = '';
+
+                // 输入框点击时显示下拉菜单
+                methodInput.onclick = function() {
+                    showDropdown(methodDropdown);
+                };
+
+                // 点击其他地方关闭下拉
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('#tool-form-method-input') && !e.target.closest('#tool-form-method-dropdown')) {
+                        hideDropdown(methodDropdown);
+                    }
+                });
+
+                // 处理下拉选项点击
+                methodDropdown.addEventListener('click', function(e) {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item) {
+                        const value = item.getAttribute('data-value');
+                        const text = item.textContent;
+
+                        methodInput.value = text;
+                        methodHidden.value = value;
+                        hideDropdown(methodDropdown);
+                    }
+                });
+            }
+
+            // showDropdown 和 hideDropdown 函数已在 layout.html 中定义，这里移除重复定义
+
+            function parseCurl() {
+                const curlInput = document.getElementById('curl-input');
+                const curlText = curlInput.value.trim();
+
+                if (!curlText) {
+                    showToast('请输入 curl 命令', false);
+                    return;
+                }
+
+                parseCurlBtn.disabled = true;
+                parseCurlBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>解析中...';
+
+                authenticatedFetch('/api/tool/parseCUrl', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ curl: curlText })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let parseData = data;
+                    if (data && data.hasOwnProperty('code')) {
+                        if (data.code === 200) {
+                            parseData = data.data;
+                        } else {
+                            throw new Error(data.msg || '解析 curl 失败');
+                        }
+                    }
+
+                    // Fill form with parsed data
+                    if (parseData.url) {
+                        document.getElementById('tool-form-url').value = parseData.url;
+                    }
+                    if (parseData.method) {
+                        // 更新请求方法下拉框的显示值
+                        document.getElementById('tool-form-method-input').value = parseData.method;
+                        document.getElementById('tool-form-method').value = parseData.method;
+                    }
+
+                    // Fill headers
+                    clearHeaders();
+                    if (parseData.headers && parseData.headers.length > 0) {
+                        parseData.headers.forEach(header => {
+                            addHeaderRow(header.name, header.value);
+                        });
+                    }
+
+                    // Fill fields
+                    clearFields();
+                    if (parseData.fieldConfig && parseData.fieldConfig.length > 0) {
+                        parseData.fieldConfig.forEach(field => {
+                            addFieldRow(field.name, field.description || '', field.type || 'string', field.required || false);
+                        });
+                    }
+
+                    showToast('解析成功', true);
+                })
+                .catch(error => {
+                    showToast('解析 curl 失败: ' + (error.message || '未知错误'), false);
+                })
+                .finally(() => {
+                    parseCurlBtn.disabled = false;
+                    parseCurlBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>解析';
+                });
+            }
+            
+            function addHeaderRow(name = '', value = '') {
+                if (!headersContainer) headersContainer = document.getElementById('headers-container');
+                const headerRow = document.createElement('div');
+                headerRow.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg border border-gray-200';
+                headerRow.innerHTML = `
+                    <input type="text" class="header-name flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Header名称" value="${name}">
+                    <input type="text" class="header-value flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Header值" value="${value}">
+                    <button type="button" class="remove-header-btn p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
+                        <i class="fas fa-trash text-sm"></i>
+                    </button>
+                `;
+                headersContainer.appendChild(headerRow);
+
+                // Add remove button event
+                headerRow.querySelector('.remove-header-btn').addEventListener('click', function() {
+                    headerRow.remove();
+                });
+            }
+            
+            function addFieldRow(name = '', description = '', type = 'string', required = false) {
+                if (!fieldsContainer) fieldsContainer = document.getElementById('fields-container');
+                const fieldRow = document.createElement('div');
+                fieldRow.className = 'p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3';
+                fieldRow.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-gray-600">字段名称</label>
+                            <input type="text" class="field-name w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="字段名" value="${name}" required>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-gray-600">字段描述</label>
+                            <input type="text" class="field-description w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="描述" value="${description}" required>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-gray-600">数据类型</label>
+                            <select class="field-type w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <option value="string" ${type === 'string' ? 'selected' : ''}>字符串</option>
+                                <option value="number" ${type === 'number' ? 'selected' : ''}>数字</option>
+                                <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>布尔值</option>
+                                <option value="object" ${type === 'object' ? 'selected' : ''}>对象</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-gray-600">是否必填</label>
+                            <div class="flex items-center h-full">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" class="field-required w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2" ${required ? 'checked' : ''}>
+                                    <span class="ml-2 text-sm text-gray-700">必填</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" class="remove-field-btn text-red-600 hover:text-red-700 text-sm font-medium flex items-center transition-colors">
+                            <i class="fas fa-trash mr-1"></i>删除字段
+                        </button>
+                    </div>
+                `;
+                fieldsContainer.appendChild(fieldRow);
+
+                // Add remove button event
+                fieldRow.querySelector('.remove-field-btn').addEventListener('click', function() {
+                    fieldRow.remove();
+                });
+            }
+            
+            function clearHeaders() {
+                if (!headersContainer) headersContainer = document.getElementById('headers-container');
+                headersContainer.innerHTML = '';
+            }
+            
+            function clearFields() {
+                if (!fieldsContainer) fieldsContainer = document.getElementById('fields-container');
+                fieldsContainer.innerHTML = '';
+            }
+            
+            function saveTool() {
+                const id = document.getElementById('tool-form-id').value;
+                const name = document.getElementById('tool-form-name').value;
+                const desc = document.getElementById('tool-form-desc').value;
+                const url = document.getElementById('tool-form-url').value;
+                const method = document.getElementById('tool-form-method').value;
+                
+                if (!name || !desc || !url || !method) {
+                    showToast('请填写必填项', false);
+                    return;
+                }
+                
+                // Collect headers
+                const headers = [];
+                const headerRows = headersContainer.querySelectorAll('.flex.gap-2');
+                headerRows.forEach(row => {
+                    const nameInput = row.querySelector('.header-name');
+                    const valueInput = row.querySelector('.header-value');
+                    if (nameInput && valueInput && nameInput.value.trim() && valueInput.value.trim()) {
+                        headers.push({
+                            name: nameInput.value.trim(),
+                            value: valueInput.value.trim()
+                        });
+                    }
+                });
+                
+                // Collect fields
+                const fields = [];
+                const fieldRows = fieldsContainer.querySelectorAll('.border.p-3');
+                for (const row of fieldRows) {
+                    const nameInput = row.querySelector('.field-name');
+                    const descInput = row.querySelector('.field-description');
+                    const typeSelect = row.querySelector('.field-type');
+                    const requiredCheckbox = row.querySelector('.field-required');
+
+                    if (nameInput && descInput && typeSelect) {
+                        const fieldName = nameInput.value.trim();
+                        const fieldDesc = descInput.value.trim();
+
+                        // 如果字段名称填写了，但描述为空，则不允许提交
+                        if (fieldName && !fieldDesc) {
+                            showToast('字段 "' + fieldName + '" 的描述不能为空', false);
+                            return;
+                        }
+
+                        // 如果字段名称和描述都填写了，才添加到字段列表中
+                        if (fieldName && fieldDesc) {
+                            fields.push({
+                                name: fieldName,
+                                description: fieldDesc,
+                                type: typeSelect.value,
+                                required: requiredCheckbox ? requiredCheckbox.checked : false
+                            });
+                        }
+                    }
+                }
+                
+                const data = {
+                    name: name,
+                    desc: desc,
+                    url: url,
+                    method: method,
+                    headers: headers,
+                    fieldConfig: fields
+                };
+                
+                if (isEditMode && id) {
+                    data.id = parseInt(id);
+                }
+                
+                saveToolBtn.disabled = true;
+                saveToolBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+                
+                const urlEndpoint = isEditMode ? '/api/tool/updateTool' : '/api/tool/createTool';
+                
+                authenticatedFetch(urlEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('HTTP error! status: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                showToast(data.msg || '保存成功', true);
+                                setTimeout(() => {
+                                    closeToolModal();
+                                    loadTools(currentPage);
+                                }, 300);
+                            } else {
+                                showToast(data.msg || '保存失败', false);
+                            }
+                        } else {
+                            if (data.success !== false) {
+                                showToast('保存成功', true);
+                                setTimeout(() => {
+                                    closeToolModal();
+                                    loadTools(currentPage);
+                                }, 300);
+                            } else {
+                                showToast(data.message || '保存失败', false);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        if (!error.message || error.message.includes('HTTP')) {
+                            showToast('保存失败，请稍后重试', false);
+                        }
+                    })
+                    .finally(() => {
+                        saveToolBtn.disabled = false;
+                        saveToolBtn.innerHTML = '保存';
+                    });
+            }
+            
+            function closeToolModal() {
+                toolModal.classList.remove('active');
+                // 等待动画完成后隐藏弹窗
+                setTimeout(() => {
+                    toolModal.classList.add('hidden');
+                    // 恢复背景滚动
+                    document.body.style.overflow = '';
+                }, 300); // 与CSS transition时间匹配
+            }
+            
+            function ensureEventDelegation() {
+                if (!toolsTableBody) return;
+                if (toolsTableBody._hasEventDelegation) return;
+
+                toolsTableBody.addEventListener('click', function(e) {
+                    const target = e.target.closest('button');
+                    if (!target) return;
+
+                    if (target.classList.contains('edit-tool-btn')) {
+                        e.preventDefault();
+                        const toolId = target.getAttribute('data-tool-id');
+                        editTool(toolId);
+                    }
+                });
+
+                toolsTableBody._hasEventDelegation = true;
+            }
+
+            window.loadTools = loadTools;
+        })();
+    </script>
+</div>

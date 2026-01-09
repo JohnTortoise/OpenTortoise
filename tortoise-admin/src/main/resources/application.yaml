@@ -3,22 +3,22 @@ spring:
     name: tortoise-web
 
   datasource:
-    host: ${SPRING_DATASOURCE_HOST}
-    port: ${SPRING_DATASOURCE_PORT}
-    database: ${SPRING_DATASOURCE_DATABASE}
-    url: jdbc:mysql://${spring.datasource.host}:${spring.datasource.port}/${spring.datasource.database}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    host: 127.0.0.1
+    port: 3306
+    database: db_tortoise
+    url: jdbc:mysql://127.0.0.1:3306/db_tortoise?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
+    username: root
+    password: usiytvsiid5843
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: ${DATASOURCE_MAX_POOL_SIZE}
-      minimum-idle: ${DATASOURCE_MIN_IDLE}
-      idle-timeout: ${DATASOURCE_IDLE_TIMEOUT}
-      max-lifetime: ${DATASOURCE_MAX_LIFETIME}
-      connection-timeout: ${DATASOURCE_CONNECTION_TIMEOUT}
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
 
   thymeleaf:
-    cache: ${THYMELEAF_CACHE:false}
+    cache: false
     prefix: classpath:/templates/
     suffix: .html
     encoding: UTF-8
@@ -26,13 +26,13 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: ${MAX_FILE_SIZE}
-      max-request-size: ${MAX_REQUEST_SIZE}
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 server:
-  port: ${SERVER_PORT}
+  port: 8080
   servlet:
-    context-path: ${SERVER_CONTEXT_PATH}
+    context-path: /
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
@@ -41,7 +41,7 @@ mybatis-plus:
     map-underscore-to-camel-case: true
     cache-enabled: false
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-    default-executor-type: batch
+    default-executor-type: simple
   global-config:
     db-config:
       logic-delete-field: isDeleted
@@ -50,44 +50,44 @@ mybatis-plus:
 
 logging:
   level:
-    root: ${LOG_LEVEL_ROOT}
-    io.github.johntortoise: ${LOG_LEVEL_APP}
+    root: INFO
+    io.github.johntortoise: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 temp:
   file:
-    path: ${TEMP_FILE_PATH}
+    path: tmp/excel-import
 
 # 线程池配置
 thread-pool:
   common:
-    core-pool-size: ${COMMON_CORE_POOL_SIZE}
-    max-pool-size: ${COMMON_MAX_POOL_SIZE}
-    queue-capacity: ${COMMON_QUEUE_CAPACITY}
-    keep-alive-seconds: ${COMMON_KEEP_ALIVE_SECONDS}
-    await-termination-seconds: ${COMMON_AWAIT_TERMINATION_SECONDS}
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 100
+    keep-alive-seconds: 60
+    await-termination-seconds: 60
 
   after-chat:
-    core-pool-size: ${AFTER_CHAT_CORE_POOL_SIZE}
-    max-pool-size: ${AFTER_CHAT_MAX_POOL_SIZE}
-    queue-capacity: ${AFTER_CHAT_QUEUE_CAPACITY}
-    keep-alive-seconds: ${AFTER_CHAT_KEEP_ALIVE_SECONDS}
-    await-termination-seconds: ${AFTER_CHAT_AWAIT_TERMINATION_SECONDS}
-    thread-name-prefix: ${AFTER_CHAT_THREAD_PREFIX}
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 100
+    keep-alive-seconds: 60
+    await-termination-seconds: 60
+    thread-name-prefix: Async-Service-
 
   import-conversation:
-    core-pool-size: ${IMPORT_CONVERSATION_CORE_POOL_SIZE}
-    max-pool-size: ${IMPORT_CONVERSATION_MAX_POOL_SIZE}
-    queue-capacity: ${IMPORT_CONVERSATION_QUEUE_CAPACITY}
-    keep-alive-seconds: ${IMPORT_CONVERSATION_KEEP_ALIVE_SECONDS}
-    await-termination-seconds: ${IMPORT_CONVERSATION_AWAIT_TERMINATION_SECONDS}
-    thread-name-prefix: ${IMPORT_CONVERSATION_THREAD_PREFIX}
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 100
+    keep-alive-seconds: 60
+    await-termination-seconds: 60
+    thread-name-prefix: ImportExcel-
 
   batch-refresh-memory:
-    core-pool-size: ${BATCH_REFRESH_MEMORY_CORE_POOL_SIZE}
-    max-pool-size: ${BATCH_REFRESH_MEMORY_MAX_POOL_SIZE}
-    queue-capacity: ${BATCH_REFRESH_MEMORY_QUEUE_CAPACITY}
-    keep-alive-seconds: ${BATCH_REFRESH_MEMORY_KEEP_ALIVE_SECONDS}
-    await-termination-seconds: ${BATCH_REFRESH_MEMORY_AWAIT_TERMINATION_SECONDS}
-    thread-name-prefix: ${BATCH_REFRESH_MEMORY_THREAD_PREFIX}
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 100
+    keep-alive-seconds: 60
+    await-termination-seconds: 60
+    thread-name-prefix: BatchRefreshMemoryExecutor-

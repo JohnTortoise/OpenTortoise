@@ -28,15 +28,32 @@
                 <i class="fas fa-search text-blue-600"></i>
                 搜索配置
             </h3>
-            <form id="profile-search-form" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <form id="profile-search-form" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <div>
                     <label for="profile-name-search" class="block text-sm font-semibold text-gray-700 mb-2">配置名称</label>
-                    <input type="text" id="profile-name-search" name="name" 
+                    <input type="text" id="profile-name-search" name="name"
                            class="input-modern w-full"
                            placeholder="请输入配置名称">
                 </div>
+                <div>
+                    <label for="profile-enable-search" class="block text-sm font-semibold text-gray-700 mb-2">启用状态</label>
+                    <div class="relative mt-1">
+                        <input type="text" id="profile-enable-search-input"
+                               placeholder="选择启用状态"
+                               class="input-modern w-full cursor-pointer"
+                               readonly>
+                        <div id="profile-enable-search-dropdown"
+                             class="absolute z-50 mt-1 w-full bg-white shadow-xl rounded-lg py-2 text-sm border border-gray-200 focus:outline-none hidden hide-scrollbar"
+                             style="box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);">
+                            <div class="search-dropdown-item" data-value="">全部</div>
+                            <div class="search-dropdown-item" data-value="true">启用</div>
+                            <div class="search-dropdown-item" data-value="false">禁用</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="profile-enable-search" name="enable">
+                </div>
                 <div class="flex items-end">
-                    <button type="submit" 
+                    <button type="submit"
                             class="w-full btn-primary py-3 px-6 rounded-lg text-white font-medium shadow-lg">
                         <i class="fas fa-search mr-2"></i>搜索
                     </button>
@@ -76,8 +93,11 @@
                     </tbody>
                 </table>
             </div>
-            <!-- Pagination Container -->
-            <div id="profiles-pagination-container" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <!-- Pagination -->
+            <div class="flex justify-end mt-4">
+                <div id="profiles-pagination-container" class="flex items-center justify-between">
+                    <!-- Pagination will be populated by JavaScript -->
+                </div>
             </div>
         </div>
     </div>
@@ -85,7 +105,7 @@
     <!-- Add/Edit Profile Modal -->
     <div id="add-profile-modal" class="modal-modern hidden">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="modal-content text-left overflow-hidden sm:max-w-2xl sm:w-full max-h-[90vh] flex flex-col">
+            <div class="modal-content text-left overflow-hidden sm:max-w-2xl sm:w-full max-h-[95vh] flex flex-col">
                 <!-- Scrollable Content Area -->
                 <div class="flex-1 overflow-y-auto smooth-scroll">
                     <div class="px-6">
@@ -104,18 +124,30 @@
                                     <label for="profile-name" class="block text-sm font-semibold text-gray-700 mb-2">
                                         配置名称 <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="text" id="profile-name" name="name" required
-                                           class="input-modern w-full"
-                                           placeholder="请输入配置名称">
+                                    <div class="relative mt-1">
+                                        <input type="text" id="profile-name" name="name" required
+                                               class="input-modern w-full"
+                                               placeholder="请输入配置名称">
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <label for="profile-status" class="block text-sm font-medium text-gray-700">状态</label>
-                                    <select id="profile-status" name="status"
-                                            class="input-modern w-full">
-                                        <option value="1">启用</option>
-                                        <option value="0">禁用</option>
-                                    </select>
+                                    <label for="profile-status" class="block text-sm font-medium text-gray-700 mb-2">
+                                        状态 <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="relative mt-1">
+                                        <input type="text" id="profile-status-input"
+                                               placeholder="选择状态"
+                                               class="input-modern w-full cursor-pointer"
+                                               readonly>
+                                        <div id="profile-status-dropdown"
+                                             class="absolute z-50 mt-1 w-full bg-white shadow-xl rounded-lg py-2 text-sm border border-gray-200 focus:outline-none hidden hide-scrollbar"
+                                             style="box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);">
+                                            <div class="search-dropdown-item" data-value="1">启用</div>
+                                            <div class="search-dropdown-item" data-value="0">禁用</div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="profile-status" name="status">
                                 </div>
                             </div>
                         </div>
@@ -130,7 +162,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label for="llm-config-input" class="block text-sm font-medium text-gray-700">
-                                        模型配置 <span class="required-star">*</span>
+                                        模型配置 <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative mt-1">
                                         <input type="text" id="llm-config-input" 
@@ -147,7 +179,7 @@
 
                                 <div>
                                     <label for="memory-policy-input" class="block text-sm font-medium text-gray-700">
-                                        记忆策略 <span class="required-star">*</span>
+                                        记忆策略 <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative mt-1">
                                         <input type="text" id="memory-policy-input" 
@@ -174,7 +206,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label for="daily-token-limit-conversation" class="block text-sm font-semibold text-gray-700 mb-2">
-                                        每个会话允许的单日token消耗数 <span class="text-red-500">*</span>
+                                        单日单会话token上限 <span class="text-red-500">*</span>
                                     </label>
                                     <input type="number" id="daily-token-limit-conversation" name="dailyTokenLimitConversation" 
                                            required min="0" step="1"
@@ -184,7 +216,7 @@
 
                                 <div>
                                     <label for="daily-token-limit-total" class="block text-sm font-semibold text-gray-700 mb-2">
-                                        每个聊天配置允许的单日token消耗数 <span class="text-red-500">*</span>
+                                        单日总token上限 <span class="text-red-500">*</span>
                                     </label>
                                     <input type="number" id="daily-token-limit-total" name="dailyTokenLimitTotal" 
                                            required min="0" step="1"
@@ -195,17 +227,19 @@
                         </div>
                         </div>
                     </form>
+
+                    <!-- Spacer for bottom margin -->
+                    <div class="mb-6"></div>
                 </div>
 
                 <!-- Fixed Modal Footer -->
                 <div class="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse gap-3 flex-shrink-0 border-t border-gray-200">
                     <button type="button" id="save-profile-btn"
                             class="btn-primary px-6 py-3 rounded-lg text-white font-medium shadow-lg">
-                        保存配置
+                        保存
                     </button>
                     <button type="button" onclick="closeAddProfileModal()"
                             class="px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition">
-                        <i class="fas fa-times mr-2"></i>
                         取消
                     </button>
                 </div>
@@ -217,11 +251,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             // State management
             let currentSearch = {
-                name: ''
+                name: '',
+                enable: ''
             };
             let isPageActive = false;
             let currentPage = 1;
-            const pageSize = 10;
+            let currentPageSize = 10; // 每页显示条数
+
+            // Pagination component instance
+            let profilesPagination;
             
             // DOM Elements
             const searchForm = document.getElementById('profile-search-form');
@@ -232,6 +270,9 @@
 
             // Event Listeners
             searchForm.addEventListener('submit', handleSearch);
+
+            // 初始化启用状态下拉框
+            setupEnableStatusDropdown();
 
             // 点击弹窗背景关闭弹窗
             const addProfileModal = document.getElementById('add-profile-modal');
@@ -252,6 +293,9 @@
             const chatProfilePage = document.getElementById('chat-profile-page');
             isPageActive = chatProfilePage ? chatProfilePage.classList.contains('active-page') : false;
             
+            // Initialize pagination component
+            initPagination();
+
             // 只监听按钮的click事件，避免与表单submit事件冲突
             saveProfileBtn.addEventListener("click",handleAddProfileSubmit)
 
@@ -264,6 +308,24 @@
             } else {
                 // Chat-profile page is not active, waiting for pageChanged event
             }
+
+            function initPagination() {
+                if (profilesPaginationContainer && !profilesPagination) {
+                    profilesPagination = new PaginationComponent({
+                        container: profilesPaginationContainer,
+                        currentPage: currentPage,
+                        pageSize: currentPageSize,
+                        onPageChange: (page) => {
+                            loadProfiles(page);
+                        },
+                        onPageSizeChange: (pageSize) => {
+                            currentPageSize = pageSize;
+                            currentPage = 1;
+                            loadProfiles(currentPage);
+                        }
+                    });
+                }
+            }
             
             // Handle page changes
             document.addEventListener('pageChanged', function(e) {
@@ -271,6 +333,8 @@
                     // Only load if page wasn't already active
                     if (!isPageActive) {
                         isPageActive = true;
+                        // Initialize pagination component first
+                        initPagination();
                         // 延迟加载，确保页面完全显示
                         setTimeout(() => {
                         loadProfiles(1); // 加载第一页聊天配置
@@ -284,33 +348,50 @@
             // 使用全局的showToast和hideToast函数（在layout.html中定义）
             
             function handleSearch(e) {
-                e.preventDefault();
+                // 如果有event参数，则阻止默认行为
+                if (e && typeof e.preventDefault === 'function') {
+                    e.preventDefault();
+                }
                 currentSearch.name = document.getElementById('profile-name-search').value;
+                currentSearch.enable = document.getElementById('profile-enable-search').value;
                 currentPage = 1;
-                loadProfiles(1); // 从第一页开始加载
+                loadProfiles(currentPage);
             }
             
             function loadProfiles(page = 1) {
                 const params = new URLSearchParams({
-                    page: page,
-                    size: pageSize,
+                    pageNum: page,
+                    pageSize: currentPageSize,
                     name: currentSearch.name
                 });
+
+                // 只有当enable有值时才添加enable参数
+                if (currentSearch.enable !== undefined && currentSearch.enable !== '') {
+                    params.append('enable', currentSearch.enable);
+                }
                 
                 authenticatedFetch(`/api/chatProfile/page?${params}`)
                     .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
                         return response.json();
                     })
                     .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载数据失败');
+                            }
+                        }
+                        
                         // 渲染表格
-                          renderProfilesTable(data.records || []);
-                          // 渲染分页
-                          renderProfilesPagination({
-                              current: page,
-                              pages: data.pages || 1,
-                              size: pageSize,
-                              total: data.total || 0
-                          });
+                        renderProfilesTable(actualData.records || []);
+                        // 渲染分页
+                        renderProfilesPagination(actualData);
                     })
                     .catch(error => {
                         profilesTableBody.innerHTML = `
@@ -324,144 +405,12 @@
             }
             
             function renderProfilesPagination(pageData) {
-                const { current = 1, pages = 1, size = 10, total = 0 } = pageData;
-                const startItem = (current - 1) * size + 1;
-                const endItem = Math.min(current * size, total);
-                
-                // 当没有数据时，显示第0到0条结果
-                const displayStart = total > 0 ? startItem : 0;
-                const displayEnd = total > 0 ? endItem : 0;
-                
-                let paginationHtml = `
-                    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-                        <div class="flex flex-1 justify-between sm:hidden">
-                            <button id="profiles-mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${pages === 1 ? 'opacity-50 cursor-not-allowed' : ''}">
-                                        上一页
-                                    </button>
-                                    <button id="profiles-mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${pages === 1 ? 'opacity-50 cursor-not-allowed' : ''}">
-                                        下一页
-                                    </button>
-                        </div>
-                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
-                                </p>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="flex items-center">
-                                    <span class="text-sm text-gray-700 mr-2">第</span>
-                                    <input type="number" min="1" max="${pages}" value="${current}" 
-                                           class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                           id="profiles-page-input">
-                                    <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
-                                    <button id="profiles-page-go-btn" 
-                                            class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                        跳转
-                                    </button>
-                                </div>
-                                <div class="flex space-x-2 ml-4">
-                                    <button id="profiles-prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 ${current === 1 ? 'opacity-50 cursor-not-allowed' : ''}">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                    <button id="profiles-next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 ${pages === 1 || current >= pages ? 'opacity-50 cursor-not-allowed' : ''}">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                  
-                  profilesPaginationContainer.innerHTML = paginationHtml;
-                
-                // Add event listeners after rendering with a timeout to ensure DOM is fully updated
-                setTimeout(() => {
-                    // Previous page buttons
-                    const prevBtn = document.getElementById('profiles-prev-btn');
-                    const mobilePrevBtn = document.getElementById('profiles-mobile-prev-btn');
-                    
-                    // Next page buttons
-                    const nextBtn = document.getElementById('profiles-next-btn');
-                    const mobileNextBtn = document.getElementById('profiles-mobile-next-btn');
-                    
-                    // Page input and go button
-                    const pageInput = document.getElementById('profiles-page-input');
-                    const pageGoBtn = document.getElementById('profiles-page-go-btn');
-                    
-                    // Disable/enable buttons based on current page
-                    if (current <= 1 || pages === 1) {
-                        if (prevBtn) {
-                            prevBtn.disabled = true;
-                            prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                        if (mobilePrevBtn) {
-                            mobilePrevBtn.disabled = true;
-                            mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                    } else {
-                        if (prevBtn) {
-                            prevBtn.disabled = false;
-                            prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            prevBtn.onclick = () => {
-                                loadProfiles(current - 1);
-                            };
-                        }
-                        if (mobilePrevBtn) {
-                            mobilePrevBtn.disabled = false;
-                            mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            mobilePrevBtn.onclick = () => {
-                                loadProfiles(current - 1);
-                            };
-                        }
-                    }
-                    
-                    if (current >= pages || pages === 1) {
-                        if (nextBtn) {
-                            nextBtn.disabled = true;
-                            nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                        if (mobileNextBtn) {
-                            mobileNextBtn.disabled = true;
-                            mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        }
-                    } else {
-                        if (nextBtn) {
-                            nextBtn.disabled = false;
-                            nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            nextBtn.onclick = () => {
-                                loadProfiles(current + 1);
-                            };
-                        }
-                        if (mobileNextBtn) {
-                            mobileNextBtn.disabled = false;
-                            mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            mobileNextBtn.onclick = () => {
-                                loadProfiles(current + 1);
-                            };
-                        }
-                    }
-                    
-                    // Page input and go button
-                    if (pageInput && pageGoBtn) {
-                        pageGoBtn.onclick = () => {
-                            const pageNum = parseInt(pageInput.value);
-                            if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= pages) {
-                                loadProfiles(pageNum);
-                            } else {
-                                showToast('请输入有效的页码', false);
-                            }
-                        };
-                        
-                        // Allow pressing Enter to go to the page
-                        pageInput.addEventListener('keypress', (e) => {
-                            if (e.key === 'Enter') {
-                                pageGoBtn.click();
-                            }
-                        });
-                    }
-                }, 0);
-                
+                if (!profilesPagination) {
+                    initPagination();
+                }
+                if (profilesPagination) {
+                    profilesPagination.render(pageData);
+                }
             }
             
             function renderProfilesTable(profiles) {
@@ -490,8 +439,11 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${profile.createTime || ''}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${profile.updateTime || ''}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="editProfile(${profile.id})" class="text-blue-600 hover:text-blue-900">
+                                <button onclick="editProfile(${profile.id})" class="text-blue-600 hover:text-blue-900 mr-3">
                                     <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button onclick="startChat(${profile.id})" class="text-green-600 hover:text-green-900">
+                                    <i class="fas fa-rocket"></i> 快速开始
                                 </button>
                             </td>
                         </tr>
@@ -542,17 +494,46 @@
                 }, 300); // 与CSS transition时间匹配
             }
             
-            function hideDropdown(dropdown) {
-                if (dropdown) {
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-5px)';
-                    setTimeout(() => {
-                        dropdown.style.display = 'none';
-                        dropdown.style.visibility = 'hidden';
-                    }, 200);
-                }
-            }
+            // showDropdown 和 hideDropdown 函数已在 layout.html 中定义，这里移除重复定义
             
+            function setupEnableStatusDropdown() {
+                const enableInput = document.getElementById('profile-enable-search-input');
+                const enableDropdown = document.getElementById('profile-enable-search-dropdown');
+                const enableHidden = document.getElementById('profile-enable-search');
+
+                // 初始化默认值
+                enableInput.value = '全部';
+                enableHidden.value = '';
+
+                // 输入框点击时显示下拉菜单
+                enableInput.onclick = function() {
+                    showDropdown(enableDropdown);
+                };
+
+                // 点击其他地方关闭下拉
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('#profile-enable-search-input') && !e.target.closest('#profile-enable-search-dropdown')) {
+                        hideDropdown(enableDropdown);
+                    }
+                });
+
+                // 处理下拉选项点击
+                enableDropdown.addEventListener('click', function(e) {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item) {
+                        const value = item.getAttribute('data-value');
+                        const text = item.textContent;
+
+                        enableInput.value = text;
+                        enableHidden.value = value;
+                        hideDropdown(enableDropdown);
+
+                        // 触发搜索
+                        handleSearch();
+                    }
+                });
+            }
+
             function setupSearchInputs() {
                 // 模型配置搜索 - 添加调试日志
                 const llmInput = document.getElementById('llm-config-input');
@@ -568,7 +549,7 @@
                 llmInput.oninput = function() {
                     const keyword = this.value.trim();
                     llmHidden.value = '';
-                    
+
                     if (keyword.length > 0) {
                         setTimeout(() => searchModels(keyword), 300);
                     } else {
@@ -576,22 +557,22 @@
                         hideDropdown(llmDropdown);
                     }
                 };
-                
+
                 // 记忆策略搜索
                 const policyInput = document.getElementById('memory-policy-input');
                 const policyDropdown = document.getElementById('memory-policy-dropdown');
                 const policyHidden = document.getElementById('memory-policy');
-                
+
                 // 输入框点击时触发搜索，传入空字符串
                 policyInput.onclick = function() {
                     policyHidden.value = '';
                     searchPolicies('');
                 };
-                
+
                 policyInput.oninput = function() {
                     const keyword = this.value.trim();
                     policyHidden.value = '';
-                    
+
                     if (keyword.length > 0) {
                         setTimeout(() => searchPolicies(keyword), 300);
                     } else {
@@ -599,7 +580,24 @@
                         hideDropdown(policyDropdown);
                     }
                 };
-                
+
+                // 状态下拉设置
+                const statusInput = document.getElementById('profile-status-input');
+                const statusDropdown = document.getElementById('profile-status-dropdown');
+                const statusHidden = document.getElementById('profile-status');
+
+                // 初始化默认值
+                const defaultOption = statusDropdown.querySelector('.search-dropdown-item[data-value="1"]');
+                if (defaultOption) {
+                    statusInput.value = defaultOption.textContent;
+                    statusHidden.value = defaultOption.getAttribute('data-value');
+                }
+
+                // 输入框点击时显示下拉菜单
+                statusInput.onclick = function() {
+                    showDropdown(statusDropdown);
+                };
+
                 // 点击其他地方关闭下拉
                 document.addEventListener('click', function(e) {
                     if (!e.target.closest('#llm-config-input') && !e.target.closest('#chat-profile-llm-config-dropdown')) {
@@ -608,55 +606,74 @@
                     if (!e.target.closest('#memory-policy-input') && !e.target.closest('#memory-policy-dropdown')) {
                         hideDropdown(policyDropdown);
                     }
+                    if (!e.target.closest('#profile-status-input') && !e.target.closest('#profile-status-dropdown')) {
+                        hideDropdown(statusDropdown);
+                    }
+                });
+
+                // 处理状态下拉选项点击
+                statusDropdown.addEventListener('click', function(e) {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item) {
+                        const value = item.getAttribute('data-value');
+                        const text = item.textContent;
+
+                        statusInput.value = text;
+                        statusHidden.value = value;
+                        hideDropdown(statusDropdown);
+                    }
                 });
             }
             
-            function searchModels(keyword) {
-                const dropdown = document.getElementById('chat-profile-llm-config-dropdown');
+            // 通用的搜索执行函数（用于chat-profile.html）
+            function executeChatProfileSearch(config) {
+                const { dropdownId, apiUrl, inputId, hiddenId } = config;
+                const dropdown = document.getElementById(dropdownId);
+                if (!dropdown) return;
+
                 dropdown.innerHTML = '<div class="search-dropdown-item cursor-default text-gray-500">搜索中...</div>';
-                
-                // 显示下拉菜单并添加动画
-                dropdown.style.display = 'block';
-                dropdown.style.visibility = 'visible';
-                
-                // 使用requestAnimationFrame确保DOM更新后再应用动画
-                requestAnimationFrame(() => {
-                    dropdown.style.opacity = '1';
-                    dropdown.style.transform = 'translateY(0)';
-                });
-                
-                authenticatedFetch(`/api/chatProfile/searchModel?keyword=${encodeURIComponent(keyword)}`)
-                    .then(response => response.json())
+                showDropdown(dropdownId);
+
+                authenticatedFetch(apiUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        renderOptions(data, dropdown, 'llm-config-input', 'llm-config');
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '搜索失败');
+                            }
+                        }
+                        renderOptions(actualData, dropdown, inputId, hiddenId);
                     })
                     .catch(error => {
                         dropdown.innerHTML = '<div class="search-dropdown-item cursor-default text-red-500">搜索失败</div>';
                     });
+            }
+
+            function searchModels(keyword) {
+                executeChatProfileSearch({
+                    dropdownId: 'chat-profile-llm-config-dropdown',
+                    apiUrl: `/api/chatProfile/searchModel?keyword=${encodeURIComponent(keyword)}`,
+                    inputId: 'llm-config-input',
+                    hiddenId: 'llm-config'
+                });
             }
             
             function searchPolicies(keyword) {
-                const dropdown = document.getElementById('memory-policy-dropdown');
-                dropdown.innerHTML = '<div class="search-dropdown-item cursor-default text-gray-500">搜索中...</div>';
-                
-                // 显示下拉菜单并添加动画
-                dropdown.style.display = 'block';
-                dropdown.style.visibility = 'visible';
-                
-                // 使用requestAnimationFrame确保DOM更新后再应用动画
-                requestAnimationFrame(() => {
-                    dropdown.style.opacity = '1';
-                    dropdown.style.transform = 'translateY(0)';
+                executeChatProfileSearch({
+                    dropdownId: 'memory-policy-dropdown',
+                    apiUrl: `/api/chatProfile/searchMemoryPolicy?keyword=${encodeURIComponent(keyword)}`,
+                    inputId: 'memory-policy-input',
+                    hiddenId: 'memory-policy'
                 });
-                
-                authenticatedFetch(`/api/chatProfile/searchMemoryPolicy?keyword=${encodeURIComponent(keyword)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        renderOptions(data, dropdown, 'memory-policy-input', 'memory-policy');
-                    })
-                    .catch(error => {
-                        dropdown.innerHTML = '<div class="search-dropdown-item cursor-default text-red-500">搜索失败</div>';
-                    });
             }
             
             function renderOptions(items, dropdown, inputId, hiddenId) {
@@ -665,14 +682,7 @@
 
                 if (!items || items.length === 0) {
                     dropdown.innerHTML = '<div class="search-dropdown-item cursor-default text-gray-500">暂无数据</div>';
-                    dropdown.style.display = 'block';
-                    dropdown.style.visibility = 'visible';
-
-                    // 确保下拉菜单正确显示
-                    setTimeout(() => {
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    }, 10);
+                    showDropdown(dropdown);
                     return;
                 }
 
@@ -692,19 +702,13 @@
                     div.onclick = () => {
                         input.value = text;
                         hidden.value = item.id;
-                        dropdown.style.display = 'none';
-                        dropdown.style.visibility = 'hidden';
+                        hideDropdown(dropdown);
                     };
 
                     dropdown.appendChild(div);
                 });
 
-                dropdown.style.display = 'block';
-                dropdown.style.visibility = 'visible';
-
-                // 强制重新计算样式和位置
-                dropdown.style.opacity = '1';
-                dropdown.style.transform = 'translateY(0)';
+                showDropdown(dropdown);
             }
             
             function handleAddProfileSubmit(e) {
@@ -743,12 +747,12 @@
                 }
                 
                 if (profileData.dailyTokenLimitConversation === null || profileData.dailyTokenLimitConversation === undefined || profileData.dailyTokenLimitConversation < 0) {
-                    showToast('请填写每个会话允许的单日token消耗数', false);
+                    showToast('请填写单日单会话token上限', false);
                     return;
                 }
                 
                 if (profileData.dailyTokenLimitTotal === null || profileData.dailyTokenLimitTotal === undefined || profileData.dailyTokenLimitTotal < 0) {
-                    showToast('请填写每个聊天配置允许的单日token消耗数', false);
+                    showToast('请填写单日总token上限', false);
                     return;
                 }
 
@@ -760,35 +764,67 @@
                     body: JSON.stringify(profileData)
                 })
                 .then(response => {
-                    if (response.ok) {
-                        // 先关闭弹窗
-                        const modal = document.getElementById('add-profile-modal');
-                        modal.classList.remove('active');
-                        setTimeout(() => {
-                            modal.classList.add('hidden');
-                            // 恢复背景滚动
-                            document.body.style.overflow = '';
-                            // 重置表单
-                            document.getElementById('add-profile-form').reset();
-                            hideDropdown(document.getElementById('chat-profile-llm-config-dropdown'));
-                            hideDropdown(document.getElementById('memory-policy-dropdown'));
-                            document.getElementById('llm-config').value = '';
-                            document.getElementById('memory-policy').value = '';
-                            document.getElementById('daily-token-limit-conversation').value = '';
-                            document.getElementById('daily-token-limit-total').value = '';
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 处理TortoiseBaseResult格式
+                    if (data && data.hasOwnProperty('code')) {
+                        if (data.code === 200) {
+                            // 先关闭弹窗
+                            const modal = document.getElementById('add-profile-modal');
+                            modal.classList.remove('active');
+                            setTimeout(() => {
+                                modal.classList.add('hidden');
+                                // 恢复背景滚动
+                                document.body.style.overflow = '';
+                                // 重置表单
+                                document.getElementById('add-profile-form').reset();
+                                hideDropdown(document.getElementById('chat-profile-llm-config-dropdown'));
+                                hideDropdown(document.getElementById('memory-policy-dropdown'));
+                                document.getElementById('llm-config').value = '';
+                                document.getElementById('memory-policy').value = '';
+                                document.getElementById('daily-token-limit-conversation').value = '';
+                                document.getElementById('daily-token-limit-total').value = '';
 
-                            const isEdit = document.getElementById('profile-id').value;
-                            showToast(isEdit ? '编辑聊天配置成功' : '新增聊天配置成功', true);
-                            loadProfiles();
-                        }, 300); // 与CSS transition时间匹配
+                                const isEdit = document.getElementById('profile-id').value;
+                                showToast(data.msg || (isEdit ? '编辑聊天配置成功' : '新增聊天配置成功'), true);
+                                loadProfiles();
+                            }, 300); // 与CSS transition时间匹配
+                        } else {
+                            throw new Error(data.msg || '新增失败');
+                        }
                     } else {
-                        return response.json().then(err => {
-                            throw new Error(err.message || '新增失败');
-                        });
+                        // 兼容旧格式
+                        if (response.ok) {
+                            const modal = document.getElementById('add-profile-modal');
+                            modal.classList.remove('active');
+                            setTimeout(() => {
+                                modal.classList.add('hidden');
+                                document.body.style.overflow = '';
+                                document.getElementById('add-profile-form').reset();
+                                hideDropdown(document.getElementById('chat-profile-llm-config-dropdown'));
+                                hideDropdown(document.getElementById('memory-policy-dropdown'));
+                                document.getElementById('llm-config').value = '';
+                                document.getElementById('memory-policy').value = '';
+                                document.getElementById('daily-token-limit-conversation').value = '';
+                                document.getElementById('daily-token-limit-total').value = '';
+                                const isEdit = document.getElementById('profile-id').value;
+                                showToast(isEdit ? '编辑聊天配置成功' : '新增聊天配置成功', true);
+                                loadProfiles();
+                            }, 300);
+                        } else {
+                            throw new Error('新增失败');
+                        }
                     }
                 })
                 .catch(error => {
-                    showToast(error.message || '新增聊天配置失败', false);
+                    // 错误消息已在handleApiResponse中显示toast
+                    if (!error.message || error.message.includes('HTTP')) {
+                        showToast(error.message || '新增聊天配置失败', false);
+                    }
                 });
             }
 
@@ -797,15 +833,31 @@
                 authenticatedFetch(`/api/chatProfile/${id}`)
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('获取配置详情失败');
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     })
-                    .then(profile => {
+                    .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        let profile = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                profile = data.data;
+                            } else {
+                                throw new Error(data.msg || '获取配置详情失败');
+                            }
+                        }
                         // 填充表单数据
                         document.getElementById('profile-id').value = profile.id || '';
                         document.getElementById('profile-name').value = profile.name || '';
-                        document.getElementById('profile-status').value = profile.status || 1;
+
+                        // 设置状态下拉框
+                        const statusValue = profile.status !== undefined ? profile.status : 1;
+                        const statusOption = document.querySelector(`#profile-status-dropdown .search-dropdown-item[data-value="${statusValue}"]`);
+                        if (statusOption) {
+                            document.getElementById('profile-status-input').value = statusOption.textContent;
+                            document.getElementById('profile-status').value = statusValue;
+                        }
                         document.getElementById('daily-token-limit-conversation').value = profile.dailyTokenLimitConversation || '';
                         document.getElementById('daily-token-limit-total').value = profile.dailyTokenLimitTotal || '';
 
@@ -817,8 +869,22 @@
                         // 尝试获取模型配置名称
                         if (profile.llmConfigId) {
                             authenticatedFetch(`/api/llm-configs/${profile.llmConfigId}`)
-                                .then(response => response.ok ? response.json() : null)
-                                .then(config => {
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! status: ${response.status}`);
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    // 处理TortoiseBaseResult格式
+                                    let config = data;
+                                    if (data && data.hasOwnProperty('code')) {
+                                        if (data.code === 200) {
+                                            config = data.data;
+                                        } else {
+                                            return; // 失败时不显示
+                                        }
+                                    }
                                     if (config) {
                                         document.getElementById('llm-config-input').value = `${config.configName || config.modelName || ''} (ID: ${config.id})`;
                                     }
@@ -829,8 +895,22 @@
                         // 尝试获取记忆策略名称
                         if (profile.memoryPolicyId) {
                             authenticatedFetch(`/api/policy/detail?id=${profile.memoryPolicyId}`)
-                                .then(response => response.ok ? response.json() : null)
-                                .then(policy => {
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! status: ${response.status}`);
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    // 处理TortoiseBaseResult格式
+                                    let policy = data;
+                                    if (data && data.hasOwnProperty('code')) {
+                                        if (data.code === 200) {
+                                            policy = data.data;
+                                        } else {
+                                            return; // 失败时不显示
+                                        }
+                                    }
                                     if (policy) {
                                         document.getElementById('memory-policy-input').value = `${policy.name || ''} (ID: ${policy.id})`;
                                     }
@@ -853,9 +933,44 @@
                     });
             }
 
+            function startChat(profileId) {
+                // 显示加载提示
+                showToast('正在创建会话...', true);
+
+                // 调用创建会话的API
+                authenticatedFetch('/api/chat/conversation/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        chatProfileId: profileId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        showToast('会话创建成功，正在跳转...', true);
+
+                        // 延迟一秒后跳转到聊天页面
+                        setTimeout(() => {
+                            // 跳转到聊天页面
+                            switchPage('chat');
+                        }, 1000);
+                    } else {
+                        throw new Error(data.msg || '创建会话失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('创建会话失败:', error);
+                    showToast(error.message || '创建会话失败', false);
+                });
+            }
+
             // Make functions available globally for inline handlers
             window.loadProfiles = loadProfiles;
             window.editProfile = editProfile;
+            window.startChat = startChat;
             window.openAddModalToChatProfile = openAddModalToChatProfile;
             window.closeAddProfileModal = closeAddProfileModal;
         });

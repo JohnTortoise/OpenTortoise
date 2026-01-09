@@ -1,5 +1,6 @@
 package io.github.johntortoise.controller;
 
+import io.github.johntortoise.core.dto.sys.TortoiseBaseResult;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.dto.CreateSysUserReq;
 import io.github.johntortoise.service.TortoiseSysUserService;
@@ -26,12 +27,12 @@ public class TortoiseUserController {
 
     
     @PostMapping("createSysUser")
-    public ResponseEntity<Void> createSysUser(@Valid @RequestBody CreateSysUserReq createSysUserReq) {
+    public TortoiseBaseResult<Void> createSysUser(@Valid @RequestBody CreateSysUserReq createSysUserReq) {
         try {
             LogUtil.info("创建系统用户: email={}", createSysUserReq.getEmail());
             sysUserService.createUser(createSysUserReq);
             LogUtil.info("创建系统用户成功: email={}", createSysUserReq.getEmail());
-            return ResponseEntity.ok().build();
+            return TortoiseBaseResult.ok();
         } catch (Exception e) {
             LogUtil.error("创建系统用户失败: email={}", createSysUserReq.getEmail(), e);
             throw e;
@@ -40,12 +41,12 @@ public class TortoiseUserController {
 
     
     @GetMapping("createUser")
-    public ResponseEntity<Long> createUser(@RequestParam("customerId") @NotBlank(message = "客户ID不能为空") String customerId) {
+    public TortoiseBaseResult<Long> createUser(@RequestParam("customerId") @NotBlank(message = "客户ID不能为空") String customerId) {
         try {
             LogUtil.info("创建用户: customerId={}", customerId);
             Long userId = tortoiseUserService.createUser(customerId);
             LogUtil.info("创建用户成功: userId={}, customerId={}", userId, customerId);
-            return ResponseEntity.ok(userId);
+            return TortoiseBaseResult.ok(userId);
         } catch (Exception e) {
             LogUtil.error("创建用户失败: customerId={}", customerId, e);
             throw e;

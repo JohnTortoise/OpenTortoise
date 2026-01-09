@@ -28,17 +28,22 @@ public class TortoiseConversationDTO {
 
     private Long llmConfigId;
 
+    private String llmConfigName;
 
     private Long createUserId;
 
 
     private Long memoryPolicyId;
 
+    private String memoryPolicyName;
+
 
     private Integer qAndACount;
 
 
     private Long tortoiseChatProfileId;
+
+    private String tortoiseChatProfileIdName;
 
 
     @JsonSerialize(using = LocalDateTimeSerializer.class)

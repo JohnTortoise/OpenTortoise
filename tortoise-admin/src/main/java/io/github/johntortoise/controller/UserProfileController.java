@@ -2,6 +2,7 @@ package io.github.johntortoise.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.johntortoise.core.dto.sys.TortoiseBaseResult;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.context.TortoiseContext;
 import io.github.johntortoise.dto.CreateSysUserReq;
@@ -13,7 +14,6 @@ import io.github.johntortoise.service.TortoiseSysUserService;
 import io.github.johntortoise.utils.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,7 +34,7 @@ public class UserProfileController {
 
     
     @GetMapping("/profile")
-    public ResponseEntity<Map<String, Object>> getCurrentUserProfile(HttpServletRequest request) {
+    public TortoiseBaseResult<Map<String, Object>> getCurrentUserProfile(HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         
         try {
@@ -44,7 +44,7 @@ public class UserProfileController {
                 LogUtil.warn("未找到用户信息");
                 response.put("success", false);
                 response.put("message", "未找到用户信息");
-                return ResponseEntity.ok(response);
+                return TortoiseBaseResult.ok(response);
             }
             
             UserProfileDTO profile = sysUserService.getUserProfile(userId);
@@ -52,23 +52,23 @@ public class UserProfileController {
                 LogUtil.warn("用户不存在: userId={}", userId);
                 response.put("success", false);
                 response.put("message", "用户不存在");
-                return ResponseEntity.ok(response);
+                return TortoiseBaseResult.ok(response);
             }
             
             response.put("success", true);
             response.put("data", profile);
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         } catch (Exception e) {
             LogUtil.error("获取用户信息失败", e);
             response.put("success", false);
             response.put("message", "获取用户信息失败: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         }
     }
 
     
     @PostMapping("/profile/update")
-    public ResponseEntity<Map<String, Object>> updateCurrentUserProfile(
+    public TortoiseBaseResult<Map<String, Object>> updateCurrentUserProfile(
             @Valid @RequestBody UpdateSysUserReq updateReq,
             HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
@@ -80,7 +80,7 @@ public class UserProfileController {
                 LogUtil.warn("未找到用户信息");
                 response.put("success", false);
                 response.put("message", "未找到用户信息");
-                return ResponseEntity.ok(response);
+                return TortoiseBaseResult.ok(response);
             }
             
             updateReq.setId(userId);
@@ -94,18 +94,18 @@ public class UserProfileController {
             
             response.put("success", success);
             response.put("message", success ? "更新成功" : "更新失败");
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         } catch (Exception e) {
             LogUtil.error("更新用户信息失败", e);
             response.put("success", false);
             response.put("message", "更新失败: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         }
     }
 
     
     @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> getUserList(
+    public TortoiseBaseResult<Map<String, Object>> getUserList(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Integer current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页大小必须大于0") Integer size,
             @RequestParam(required = false) String email,
@@ -120,7 +120,7 @@ public class UserProfileController {
                 LogUtil.warn("无权限访问用户列表");
                 response.put("success", false);
                 response.put("message", "无权限访问");
-                return ResponseEntity.ok(response);
+                return TortoiseBaseResult.ok(response);
             }
             
             Page<TortoiseSysUser> page = new Page<>(current, size);
@@ -128,18 +128,18 @@ public class UserProfileController {
             
             response.put("success", true);
             response.put("data", userPage);
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         } catch (Exception e) {
             LogUtil.error("获取用户列表失败: email={}", email, e);
             response.put("success", false);
             response.put("message", "获取用户列表失败: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         }
     }
 
     
     @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> createUser(
+    public TortoiseBaseResult<Map<String, Object>> createUser(
             @Valid @RequestBody CreateSysUserReq createReq,
             HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
@@ -152,7 +152,7 @@ public class UserProfileController {
                 LogUtil.warn("无权限创建用户");
                 response.put("success", false);
                 response.put("message", "无权限访问");
-                return ResponseEntity.ok(response);
+                return TortoiseBaseResult.ok(response);
             }
             
             sysUserService.createUser(createReq);
@@ -160,18 +160,18 @@ public class UserProfileController {
             LogUtil.info("创建用户成功: email={}", createReq.getEmail());
             response.put("success", true);
             response.put("message", "创建成功");
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         } catch (Exception e) {
             LogUtil.error("创建用户失败: email={}", createReq.getEmail(), e);
             response.put("success", false);
             response.put("message", "创建失败: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         }
     }
 
     
     @PostMapping("/update")
-    public ResponseEntity<Map<String, Object>> updateUser(
+    public TortoiseBaseResult<Map<String, Object>> updateUser(
             @Valid @RequestBody UpdateSysUserReq updateReq,
             HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
@@ -184,7 +184,7 @@ public class UserProfileController {
                 LogUtil.warn("无权限更新用户");
                 response.put("success", false);
                 response.put("message", "无权限访问");
-                return ResponseEntity.ok(response);
+                return TortoiseBaseResult.ok(response);
             }
             
             boolean success = sysUserService.updateUser(updateReq);
@@ -197,18 +197,18 @@ public class UserProfileController {
             
             response.put("success", success);
             response.put("message", success ? "更新成功" : "更新失败");
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         } catch (Exception e) {
             LogUtil.error("更新用户失败: id={}", updateReq.getId(), e);
             response.put("success", false);
             response.put("message", "更新失败: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         }
     }
 
     
     @PostMapping("/delete")
-    public ResponseEntity<Map<String, Object>> deleteUser(
+    public TortoiseBaseResult<Map<String, Object>> deleteUser(
             @RequestParam @NotNull(message = "用户ID不能为空") Long userId,
             HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
@@ -221,7 +221,7 @@ public class UserProfileController {
                 LogUtil.warn("无权限删除用户");
                 response.put("success", false);
                 response.put("message", "无权限访问");
-                return ResponseEntity.ok(response);
+                return TortoiseBaseResult.ok(response);
             }
             
             boolean success = sysUserService.deleteUser(userId);
@@ -234,12 +234,12 @@ public class UserProfileController {
             
             response.put("success", success);
             response.put("message", success ? "删除成功" : "删除失败");
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         } catch (Exception e) {
             LogUtil.error("删除用户失败: userId={}", userId, e);
             response.put("success", false);
             response.put("message", "删除失败: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return TortoiseBaseResult.ok(response);
         }
     }
 

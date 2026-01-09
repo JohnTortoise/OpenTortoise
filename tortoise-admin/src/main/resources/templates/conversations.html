@@ -56,20 +56,27 @@
             </div>
             
             <!-- Pagination -->
-            <div id="conversation-pagination-container" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                <!-- Pagination will be populated by JavaScript -->
+            <div class="flex justify-end mt-4">
+                <div id="conversation-pagination-container" class="flex items-center justify-between">
+                    <!-- Pagination will be populated by JavaScript -->
+                </div>
             </div>
         </div>
     </div>
     
+    <!-- Conversation Panel Component (Hidden) -->
+    <div id="conversation-panel-container" class="hidden">
+        <div th:replace="~{conversation-panel :: content}"></div>
+    </div>
+
     <!-- Detail Modal -->
     <div id="detail-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            
+
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ">
+
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
@@ -77,17 +84,33 @@
                                 会话详情
                             </h3>
                             <div class="mt-4">
-                                <div id="messages-scroll-container" class="bg-gray-50 rounded-lg resizable-area" style="min-height: 400px; max-height: 80vh;">
-                                    <div id="messages-container" class="space-y-4">
-                                        <!-- Messages will be populated by JavaScript -->
-                                        <div class="text-center text-gray-500">加载中...</div>
+                                <!-- 使用conversation-panel组件 -->
+                                <div id="conversation-panel-modal" class="bg-white rounded-lg border" style="min-height: 600px; max-height: 80vh; overflow: hidden;">
+                                    <!-- 聊天头部 -->
+                                    <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-robot text-white text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <h1 id="modal-chat-title" class="text-lg font-semibold text-gray-900">会话详情</h1>
+                                                <p id="modal-chat-subtitle" class="text-sm text-gray-500">查看会话消息记录</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div id="loading-indicator" class="text-center text-gray-500 hidden mt-4">
-                                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                                        <span class="ml-2">加载中...</span>
-                                    </div>
-                                    <div id="no-more-messages" class="text-center text-gray-500 hidden mt-4">
-                                        没有更多消息了
+
+                                    <!-- 消息区域 -->
+                                    <div id="modal-messages-container" class="flex-1 min-h-0 overflow-y-auto p-6 space-y-6" style="min-height: 400px; max-height: calc(80vh - 200px);">
+                                        <!-- 欢迎消息 -->
+                                        <div id="modal-welcome-message" class="flex justify-center">
+                                            <div class="max-w-2xl text-center">
+                                                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <i class="fas fa-robot text-white text-2xl"></i>
+                                                </div>
+                                                <h2 class="text-2xl font-bold text-gray-900 mb-2">加载中...</h2>
+                                                <p class="text-gray-600">正在加载会话消息</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -103,7 +126,70 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- Conversation Panel Styles -->
+    <style>
+        #conversation-panel-modal { min-width: 0; }
+        #conversation-panel-modal #modal-messages-container { min-width: 0; }
+        .message-bubble {
+            max-width: 70%;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            position: relative;
+            overflow-wrap: anywhere;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow: hidden;
+        }
+        .message-bubble.user {
+            background: #f3f4f6;
+            color: #374151;
+            margin-left: auto;
+        }
+        .message-bubble.assistant {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+        }
+        .message-content {
+            overflow-wrap: anywhere;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        .message-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .message-avatar.user {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+        .message-avatar.assistant {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .message-actions {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .message-bubble:hover .message-actions {
+            opacity: 1;
+        }
+        .message-events { margin-top: 0.5rem; }
+        .events-list .event-item { transition: all 0.2s ease; }
+        .events-list .event-item:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .event-content pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .message-blocks { margin-bottom: 0.5rem; }
+        .message-blocks > * + * { margin-top: 0.5rem; }
+    </style>
+
     <!-- Memory Modal -->
     <div id="memory-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -446,6 +532,11 @@
                 userId: ''
             };
             let isPageActive = false;
+            let currentPage = 1;
+            let currentPageSize = 10; // 每页显示条数
+
+            // Pagination component instance
+            let conversationsPagination;
             
             // DOM Elements
             const conversationSearchForm = document.getElementById('conversation-search-form');
@@ -454,8 +545,29 @@
             const importBtn = document.getElementById('import-btn');
             const fileNameDisplay = document.getElementById('file-name-display');
             
+            // Initialize pagination component
+            initPagination();
+
             // Event Listeners
             conversationSearchForm.addEventListener('submit', handleConversationSearch);
+
+            function initPagination() {
+                if (conversationPaginationContainer && !conversationsPagination) {
+                    conversationsPagination = new PaginationComponent({
+                        container: conversationPaginationContainer,
+                        currentPage: currentPage,
+                        pageSize: currentPageSize,
+                        onPageChange: (page) => {
+                            loadConversations(page);
+                        },
+                        onPageSizeChange: (pageSize) => {
+                            currentPageSize = pageSize;
+                            currentPage = 1;
+                            loadConversations(currentPage);
+                        }
+                    });
+                }
+            }
             document.getElementById('import-history-search-form').addEventListener('submit', handleImportHistorySearch);
             
             // Initialize page active state
@@ -472,6 +584,8 @@
                     // Only load if page wasn't already active
                     if (!isPageActive) {
                         isPageActive = true;
+                        // Initialize pagination component first
+                        initPagination();
                         loadConversations(currentConversationPage);
                     }
                 } else {
@@ -486,25 +600,41 @@
                 e.preventDefault();
                 currentConversationSearch.conversationId = document.getElementById('conversation-id-search').value;
                 currentConversationSearch.userId = document.getElementById('user-id-search').value;
-                currentConversationPage = 1;
-                loadConversations(currentConversationPage);
+                currentPage = 1;
+                loadConversations(currentPage);
             }
             
             function loadConversations(page) {
                 const params = new URLSearchParams({
                     pageNum: page,
-                    pageSize: 10,
+                    pageSize: currentPageSize,
                     conversationId: currentConversationSearch.conversationId,
                     userId: currentConversationSearch.userId
                 });
                 
                 authenticatedFetch(`/api/conversations/page?${params}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        renderConversationsTable(data.records);
-                        renderConversationPagination(data);
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载数据失败');
+                            }
+                        }
+                        
+                        renderConversationsTable(actualData.records);
+                        renderConversationPagination(actualData);
                     })
                     .catch(error => {
+                        // 错误消息已在handleApiResponse中显示toast
                         conversationsTableBody.innerHTML = `
                             <tr>
                                 <td colspan="6" class="px-6 py-4 text-center text-sm text-red-500">
@@ -535,191 +665,79 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.createTime || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.updateTime || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button onclick="showDetails('${conversation.conversationId}')" class="text-blue-600 hover:text-blue-900 mr-3">
-                                <i class="fas fa-info-circle"></i> 详情
-                            </button>
-                            <button onclick="showMemory('${conversation.conversationId}')" class="text-green-600 hover:text-green-900 mr-3">
-                                <i class="fas fa-memory"></i> 记忆
-                            </button>
-                            <button onclick="showCost('${conversation.conversationId}')" class="text-purple-600 hover:text-purple-900">
-                                <i class="fas fa-dollar-sign"></i> 成本
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="showDetails('${conversation.conversationId}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-slate-200">
+                                    <i class="fas fa-info-circle text-slate-600 text-xs"></i>
+                                    详情
+                                </button>
+                                <button onclick="showMemory('${conversation.conversationId}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-slate-200">
+                                    <i class="fas fa-memory text-slate-600 text-xs"></i>
+                                    记忆
+                                </button>
+                                <button onclick="showCost('${conversation.conversationId}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-slate-200">
+                                    <i class="fas fa-dollar-sign text-slate-600 text-xs"></i>
+                                    成本
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `).join('');
             }
             
             function renderConversationPagination(pageData) {
-                const { current, pages, size, total } = pageData;
-                const startItem = (current - 1) * size + 1;
-                const endItem = Math.min(current * size, total);
-                
-                // 当没有数据时，显示第0到0条结果
-                const displayStart = total > 0 ? startItem : 0;
-                const displayEnd = total > 0 ? endItem : 0;
-                
-                // Simplified pagination with only Previous, Current (input) and Next buttons
-                let paginationHtml = `
-                    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-                        <div class="flex flex-1 justify-between sm:hidden">
-                            <button id="conversations-mobile-prev-btn" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                上一页
-                            </button>
-                            <button id="conversations-mobile-next-btn" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                下一页
-                            </button>
-                        </div>
-                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    显示第 <span class="font-medium">${displayStart}</span> 到 <span class="font-medium">${displayEnd}</span> 条结果，共 <span class="font-medium">${total}</span> 条
-                                </p>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="flex items-center">
-                                    <span class="text-sm text-gray-700 mr-2">第</span>
-                                    <input type="number" min="1" max="${pages}" value="${current}" 
-                                           class="block w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                           id="conversations-page-input">
-                                    <span class="text-sm text-gray-700 mx-2">页 / 共 ${pages} 页</span>
-                                    <button id="conversations-page-go-btn" 
-                                            class="ml-2 relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                        跳转
-                                    </button>
-                                </div>
-                                <div class="flex space-x-2 ml-4">
-                                    <button id="conversations-prev-btn" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">上一页</span>
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                    <button id="conversations-next-btn" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">下一页</span>
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                conversationPaginationContainer.innerHTML = paginationHtml;
-                
-                // Add event listeners after rendering
-                setTimeout(() => {
-                    // Previous page buttons
-                    const prevBtn = document.getElementById('conversations-prev-btn');
-                    const mobilePrevBtn = document.getElementById('conversations-mobile-prev-btn');
-                    
-                    // Next page buttons
-                    const nextBtn = document.getElementById('conversations-next-btn');
-                    const mobileNextBtn = document.getElementById('conversations-mobile-next-btn');
-                    
-                    // Page input and go button
-                    const pageInput = document.getElementById('conversations-page-input');
-                    const goBtn = document.getElementById('conversations-page-go-btn');
-                    
-                    // Disable/enable buttons based on current page
-                    if (current <= 1) {
-                        if (prevBtn) prevBtn.disabled = true;
-                        if (mobilePrevBtn) mobilePrevBtn.disabled = true;
-                        if (prevBtn) prevBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        if (mobilePrevBtn) mobilePrevBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                    } else {
-                        if (prevBtn) {
-                            prevBtn.disabled = false;
-                            prevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            prevBtn.onclick = () => {
-                                loadConversations(current - 1);
-                            };
-                        }
-                        if (mobilePrevBtn) {
-                            mobilePrevBtn.disabled = false;
-                            mobilePrevBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            mobilePrevBtn.onclick = () => {
-                                loadConversations(current - 1);
-                            };
-                        }
-                    }
-                    
-                    if (current >= pages) {
-                        if (nextBtn) nextBtn.disabled = true;
-                        if (mobileNextBtn) mobileNextBtn.disabled = true;
-                        if (nextBtn) nextBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                        if (mobileNextBtn) mobileNextBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                    } else {
-                        if (nextBtn) {
-                            nextBtn.disabled = false;
-                            nextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            nextBtn.onclick = () => {
-                                loadConversations(current + 1);
-                            };
-                        }
-                        if (mobileNextBtn) {
-                            mobileNextBtn.disabled = false;
-                            mobileNextBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                            mobileNextBtn.onclick = () => {
-                                loadConversations(current + 1);
-                            };
-                        }
-                    }
-                    
-                    // Page input and go button
-                    if (pageInput && goBtn) {
-                        goBtn.onclick = () => {
-                            const page = parseInt(pageInput.value);
-                            if (!isNaN(page) && page >= 1 && page <= pages) {
-                                loadConversations(page);
-                            } else {
-                                showToast('请输入有效的页码', false);
-                            }
-                        };
-                        
-                        // Enter key support
-                        pageInput.onkeyup = (event) => {
-                            if (event.key === 'Enter') {
-                                const page = parseInt(pageInput.value);
-                                if (!isNaN(page) && page >= 1 && page <= pages) {
-                                    loadConversations(page);
-                                } else {
-                                    showToast('请输入有效的页码', false);
-                                }
-                            }
-                        };
-                    }
-                }, 0);
+                if (!conversationsPagination) {
+                    initPagination();
+                }
+                if (conversationsPagination) {
+                    conversationsPagination.render(pageData);
+                }
             }
             
             // Detail Modal Functions
             function showDetails(conversationId) {
                 const detailModal = document.getElementById('detail-modal');
-                const messagesContainer = document.getElementById('messages-container');
-                const scrollContainer = document.getElementById('messages-scroll-container');
-                const loadingIndicator = document.getElementById('loading-indicator');
-                const noMoreMessages = document.getElementById('no-more-messages');
-                
-                // 初始化状态
+                const messagesContainer = document.getElementById('modal-messages-container');
+
+                // 显示弹窗
+                detailModal.classList.add('active');
+
+                // 初始化模态框状态
                 detailModal.conversationId = conversationId;
                 detailModal.currentPage = 1;
-                detailModal.totalPages = 1; // 默认至少有一页
                 detailModal.hasMore = true;
                 detailModal.loading = false;
-                
-                // Show loading state
-                messagesContainer.innerHTML = '<div class="text-center text-gray-500">加载中...</div>';
-                loadingIndicator.classList.add('hidden');
-                noMoreMessages.classList.add('hidden');
-                detailModal.classList.add('active');
-                
-                // Load messages
-                loadMessages(conversationId, 1, 10);
-                
+
                 // 添加滚动事件监听器
-                scrollContainer.addEventListener('scroll', handleScroll);
+                messagesContainer.addEventListener('scroll', handleScroll);
+
+                // 使用DetailConversationPanel加载消息
+                if (window.DetailConversationPanel && window.DetailConversationPanel.loadMessages) {
+                    window.DetailConversationPanel.loadMessages(conversationId);
+                } else {
+                    // 如果组件还没加载完成，显示加载状态
+                    messagesContainer.innerHTML = `
+                        <div class="flex justify-center">
+                            <div class="max-w-2xl text-center">
+                                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-spinner fa-spin text-white text-2xl"></i>
+                                </div>
+                                <h2 class="text-2xl font-bold text-gray-900 mb-2">加载中...</h2>
+                                <p class="text-gray-600">正在加载会话消息</p>
+                            </div>
+                        </div>
+                    `;
+                    // 稍后重试加载
+                    setTimeout(() => {
+                        if (window.DetailConversationPanel && window.DetailConversationPanel.loadMessages) {
+                            window.DetailConversationPanel.loadMessages(conversationId);
+                        }
+                    }, 500);
+                }
             }
             
             function loadMessages(conversationId, pageNum, pageSize) {
                 const detailModal = document.getElementById('detail-modal');
-                const messagesContainer = document.getElementById('messages-container');
+                const messagesContainer = document.getElementById('modal-messages-container');
                 const loadingIndicator = document.getElementById('loading-indicator');
                 const noMoreMessages = document.getElementById('no-more-messages');
                 
@@ -743,18 +761,33 @@
                 });
                 
                 authenticatedFetch(`/api/messages/page?${params}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载消息失败');
+                            }
+                        }
+                        
                         detailModal.loading = false;
                         loadingIndicator.classList.add('hidden');
                         
-                        if (data.records && data.records.length > 0) {
-                            renderMessages(data.records, pageNum === 1);
+                        if (actualData.records && actualData.records.length > 0) {
+                            renderMessages(actualData.records, pageNum === 1);
                             
                             // 更新分页信息
-                            detailModal.currentPage = data.current;
-                            detailModal.totalPages = data.pages; // 保存总页数
-                            detailModal.hasMore = data.current < data.pages;
+                            detailModal.currentPage = actualData.current;
+                            detailModal.totalPages = actualData.pages; // 保存总页数
+                            detailModal.hasMore = actualData.current < actualData.pages;
                             
                             // 如果没有更多数据，显示提示
                             if (!detailModal.hasMore) {
@@ -792,8 +825,8 @@
             }
             
             function renderMessages(messages, clearExisting = false) {
-                const messagesContainer = document.getElementById('messages-container');
-                const scrollContainer = document.getElementById('messages-scroll-container');
+                const messagesContainer = document.getElementById('modal-messages-container');
+                const scrollContainer = document.getElementById('modal-messages-container');
 
                 if (!messages || messages.length === 0) {
                     if (clearExisting) {
@@ -860,21 +893,25 @@
             
             function closeDetailModal() {
                 const detailModal = document.getElementById('detail-modal');
-                const scrollContainer = document.getElementById('messages-scroll-container');
-                
-                // 移除滚动事件监听器
-                scrollContainer.removeEventListener('scroll', handleScroll);
-                
+                const scrollContainer = document.getElementById('modal-messages-container');
+
+                // 移除滚动事件监听器（如果容器存在）
+                if (scrollContainer) {
+                    scrollContainer.removeEventListener('scroll', handleScroll);
+                }
+
                 // 重置模态框状态
                 detailModal.classList.remove('active');
                 detailModal.conversationId = null;
                 detailModal.currentPage = 1;
                 detailModal.hasMore = true;
                 detailModal.loading = false;
-                
+
                 // 隐藏加载指示器和无更多消息提示
-                document.getElementById('loading-indicator').classList.add('hidden');
-                document.getElementById('no-more-messages').classList.add('hidden');
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const noMoreMessages = document.getElementById('no-more-messages');
+                if (loadingIndicator) loadingIndicator.classList.add('hidden');
+                if (noMoreMessages) noMoreMessages.classList.add('hidden');
             }
             
             // Memory Modal Functions
@@ -915,13 +952,28 @@
                 
                 // Load memories
                 authenticatedFetch(`/api/memories/getMemoriesByConversationId?conversationId=${conversationId}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载记忆失败');
+                            }
+                        }
+                        
                         memoryModal.loading = false;
                         loadingIndicator.classList.add('hidden');
                         
-                        if (data && data.length > 0) {
-                            renderMemories(data);
+                        if (actualData && actualData.length > 0) {
+                            renderMemories(actualData);
                             // 显示无更多数据提示
                             noMoreMemories.classList.remove('hidden');
                         } else {
@@ -1044,11 +1096,26 @@
                 });
                 
                 authenticatedFetch(`/api/llm-usage/page?${params}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        if (data.records) {
-                            renderCosts(data.records);
-                            renderCostsPagination(data);
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载成本数据失败');
+                            }
+                        }
+                        
+                        if (actualData.records) {
+                            renderCosts(actualData.records);
+                            renderCostsPagination(actualData);
                         } else {
                             costsTableBody.innerHTML = `
                                 <tr>
@@ -1311,11 +1378,21 @@
                         return response.json();
                     })
                     .then(data => {
-                        if (data) {
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载详情失败');
+                            }
+                        }
+                        
+                        if (actualData) {
                             // 显示消耗类型
-                            costTypeDisplay.textContent = getConsumeTypeDesc(data.type);
-                            requestContentDiv.textContent = formatJsonContent(data.requestContent) || '无输入内容';
-                            responseContentDiv.textContent = formatJsonContent(data.responseContent) || '无输出内容';
+                            costTypeDisplay.textContent = getConsumeTypeDesc(actualData.type);
+                            requestContentDiv.textContent = formatJsonContent(actualData.requestContent) || '无输入内容';
+                            responseContentDiv.textContent = formatJsonContent(actualData.responseContent) || '无输出内容';
                         } else {
                             costTypeDisplay.textContent = '无数据';
                             requestContentDiv.textContent = '无数据';
@@ -1324,9 +1401,10 @@
                     })
                     .catch(error => {
                         console.error('Error loading cost detail:', error);
+                        // 错误消息已在handleApiResponse中显示toast
                         costTypeDisplay.textContent = '加载失败';
-                        requestContentDiv.textContent = '加载失败: ' + error.message;
-                        responseContentDiv.textContent = '加载失败: ' + error.message;
+                        requestContentDiv.textContent = '加载失败: ' + (error.message || '未知错误');
+                        responseContentDiv.textContent = '加载失败: ' + (error.message || '未知错误');
                     });
             }
             
@@ -1448,23 +1526,39 @@
                     }
                 })
                 .then(response => {
-                    if (response.ok) {
-                        // 状态码为200，直接显示成功消息
-                        showToast('导入成功，请等待一段时间', true);
-                        // 刷新会话列表
-                        loadConversations(currentConversationPage);
-                        // 关闭模态框
-                        closeImportModal();
-                    } else {
-                        // 非200状态码，尝试读取错误信息
-                        return response.text().then(text => {
-                            throw new Error(text || '导入失败');
-                        });
-                    }
+                    return response.json().then(data => {
+                        // 处理TortoiseBaseResult格式
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                showToast(data.msg || '导入成功，请等待一段时间', true);
+                                // 刷新会话列表
+                                loadConversations(currentConversationPage);
+                                // 关闭模态框
+                                closeImportModal();
+                            } else {
+                                // code是500或其他错误码
+                                const errorMsg = data.msg || '导入失败';
+                                showToast(errorMsg, false);
+                                throw new Error(errorMsg);
+                            }
+                        } else {
+                            // 兼容旧格式
+                            if (response.ok) {
+                                showToast('导入成功，请等待一段时间', true);
+                                loadConversations(currentConversationPage);
+                                closeImportModal();
+                            } else {
+                                throw new Error('导入失败');
+                            }
+                        }
+                    });
                 })
                 .catch(error => {
                     console.error('Import error:', error);
-                    showToast('导入失败，请检查网络连接或文件格式', false);
+                    // 错误消息已在上面显示toast，这里不再重复
+                    if (!error.message || error.message.includes('HTTP')) {
+                        showToast('导入失败，请检查网络连接或文件格式', false);
+                    }
                 })
                 .finally(() => {
                     // 恢复导入按钮
@@ -1563,13 +1657,29 @@
                 `;
 
                 authenticatedFetch(`/api/conversations/importRecordPage?${params}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        renderImportHistoryTable(data.records);
-                        renderImportHistoryPagination(data);
+                        // 处理TortoiseBaseResult格式
+                        let actualData = data;
+                        if (data && data.hasOwnProperty('code')) {
+                            if (data.code === 200) {
+                                actualData = data.data;
+                            } else {
+                                throw new Error(data.msg || '加载导入历史失败');
+                            }
+                        }
+                        
+                        renderImportHistoryTable(actualData.records);
+                        renderImportHistoryPagination(actualData);
                     })
                     .catch(error => {
                         console.error('Load import history error:', error);
+                        // 错误消息已在handleApiResponse中显示toast
                         importHistoryTableBody.innerHTML = `
                             <tr>
                                 <td colspan="6" class="px-6 py-4 text-center text-sm text-red-500">
@@ -1831,6 +1941,194 @@
                 setTimeout(initializeResizableAreas, 100);
             });
         });
+
+        // Conversation Panel Component Script
+        (function () {
+            const messagesContainer = document.querySelector('#conversation-panel-modal #modal-messages-container');
+            const welcomeMessage = document.querySelector('#conversation-panel-modal #modal-welcome-message');
+
+            function formatMessageContent(content) {
+                if (!content) return '';
+                return content.replace(/\n/g, '<br>');
+            }
+
+            function scrollToBottom() {
+                if (!messagesContainer) return;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            function renderMessages(messages) {
+                const messagesContainer = document.querySelector('#conversation-panel-modal #modal-messages-container');
+                if (!messagesContainer) return;
+                messagesContainer.innerHTML = messages.map(message => `
+                    <div class="flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}">
+                        ${message.role !== 'user' ? `
+                            <div class="message-avatar assistant flex items-center justify-center">
+                                <i class="fas fa-robot text-sm"></i>
+                            </div>
+                        ` : ''}
+                        <div class="message-bubble ${message.role === 'user' ? 'user' : 'assistant'}">
+                            ${message.role === 'assistant' ? `
+                                <div class="message-events" id="modal-events-${message.id}" style="display: none;">
+                                    <div class="events-loading text-xs text-gray-500 mb-2 p-2 bg-gray-50 rounded">
+                                        <i class="fas fa-spinner fa-spin mr-1"></i>
+                                        加载事件详情...
+                                    </div>
+                                    <div class="events-content hidden"></div>
+                                </div>
+                            ` : ''}
+                            <div class="message-content">
+                                ${formatMessageContent(message.content)}
+                            </div>
+                            ${message.role === 'assistant' ? `
+                                <div class="message-actions mt-2 flex justify-end">
+                                    <button onclick="DetailConversationPanel.toggleMessageEvents(${message.id})"
+                                            class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 transition-colors flex items-center gap-1">
+                                        <span>详情</span>
+                                        <i class="fas fa-chevron-down text-xs transform transition-transform duration-200"></i>
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${message.role === 'user' ? `
+                            <div class="message-avatar user flex items-center justify-center">
+                                <i class="fas fa-user text-sm"></i>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+
+                // 隐藏欢迎消息
+                if (welcomeMessage) welcomeMessage.style.display = 'none';
+                scrollToBottom();
+            }
+
+            function formatEventContent(content) {
+                if (!content) return '';
+                try {
+                    const parsed = JSON.parse(content);
+                    return `<pre class="text-xs overflow-x-auto whitespace-pre-wrap">${JSON.stringify(parsed, null, 2)}</pre>`;
+                } catch (e) {
+                    return content.replace(/\n/g, '<br>');
+                }
+            }
+
+            function renderMessageEvents(events, container) {
+                if (!events || events.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-500 py-4">
+                            <i class="fas fa-info-circle mb-1"></i>
+                            <p class="text-xs">暂无事件数据</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="events-list space-y-2 mb-2">
+                        ${events.map(event => {
+                            // 对于 message 类型的事件，直接展示内容，不加框
+                            if (event.eventType === 'message') {
+                                return `<div class="message-content">${formatEventContent(event.content)}</div>`;
+                            }
+
+                            let eventClass = 'bg-gray-50';
+                            let eventTextClass = 'text-gray-900';
+                            let displayType = event.eventType || '未知事件';
+                            if (event.eventType === 'reasoningContent') {
+                                eventClass = 'bg-gray-100';
+                                eventTextClass = 'text-gray-700';
+                                displayType = 'think';
+                            } else if (event.eventType === 'tortoiseMsg') {
+                                eventClass = 'bg-blue-50';
+                                eventTextClass = 'text-blue-900';
+                                displayType = 'system msg';
+                            }
+                            return `
+                            <div class="event-item ${eventClass} border border-gray-200 rounded p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h5 class="font-medium ${eventTextClass} text-sm">${displayType}</h5>
+                                    <span class="text-xs text-gray-500">${event.timestamp ? new Date(event.timestamp).toLocaleString('zh-CN') : ''}</span>
+                                </div>
+                                ${event.content ? `
+                                    <div class="event-content text-xs text-gray-700 bg-white p-2 rounded border mt-1">
+                                        ${formatEventContent(event.content)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `}).join('')}
+                    </div>
+                `;
+            }
+
+            // 暴露到全局的组件API
+            window.DetailConversationPanel = {
+                loadMessages: function (conversationId) {
+                    if (!conversationId) return;
+                    authenticatedFetch(`/api/messages/page?conversationId=${conversationId}&page=1&size=100`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.code === 200 && data.data.records) {
+                                renderMessages(data.data.records);
+                            }
+                        })
+                        .catch(() => {
+                            showToast('加载消息失败', false);
+                        });
+                },
+                toggleMessageEvents: function (messageId) {
+                    const eventsContainer = document.getElementById(`modal-events-${messageId}`);
+                    if (!eventsContainer) return;
+                    const button = eventsContainer.parentElement.querySelector('.message-actions button i');
+                    const isExpanded = eventsContainer.style.display !== 'none';
+                    if (isExpanded) {
+                        eventsContainer.style.display = 'none';
+                        if (button) button.classList.remove('rotate-180');
+                    } else {
+                        eventsContainer.style.display = 'block';
+                        if (button) button.classList.add('rotate-180');
+                        const eventsContent = eventsContainer.querySelector('.events-content');
+                        if (eventsContent && eventsContent.classList.contains('hidden')) {
+                            window.DetailConversationPanel.loadMessageEvents(messageId);
+                        }
+                    }
+                },
+                loadMessageEvents: function (messageId) {
+                    const eventsContainer = document.getElementById(`modal-events-${messageId}`);
+                    if (!eventsContainer) return;
+                    const loadingElement = eventsContainer.querySelector('.events-loading');
+                    const eventsContent = eventsContainer.querySelector('.events-content');
+                    authenticatedFetch(`/api/messages/getEventsByMessageId?messageId=${messageId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (loadingElement) loadingElement.style.display = 'none';
+                            if (eventsContent) eventsContent.classList.remove('hidden');
+                            if (data.code === 200 && data.data) {
+                                renderMessageEvents(data.data, eventsContent);
+                            } else {
+                                eventsContent.innerHTML = `
+                                    <div class="text-center text-gray-500 py-4">
+                                        <i class="fas fa-info-circle mb-1"></i>
+                                        <p class="text-xs">暂无事件数据</p>
+                                    </div>
+                                `;
+                            }
+                        })
+                        .catch(() => {
+                            if (loadingElement) loadingElement.style.display = 'none';
+                            if (eventsContent) {
+                                eventsContent.classList.remove('hidden');
+                                eventsContent.innerHTML = `
+                                    <div class="text-center text-red-500 py-4">
+                                        <i class="fas fa-exclamation-triangle mb-1"></i>
+                                        <p class="text-xs">加载失败</p>
+                                    </div>
+                                `;
+                            }
+                        });
+                }
+            };
+        })();
     </script>
 </div>
 </html>

@@ -12,12 +12,12 @@ import io.github.johntortoise.enums.DeletedEnum;
 import io.github.johntortoise.mapper.TortoiseConversationMapper;
 import io.github.johntortoise.model.TortoiseChatProfile;
 import io.github.johntortoise.model.TortoiseConversation;
-import io.github.johntortoise.service.TortoiseChatProfileService;
-import io.github.johntortoise.service.TortoiseConversationService;
-import io.github.johntortoise.service.TortoiseImportFileRecordService;
-import io.github.johntortoise.service.TransactionalService;
+import io.github.johntortoise.model.TortoiseLlmConfig;
+import io.github.johntortoise.model.TortoiseMemoryPolicy;
+import io.github.johntortoise.service.*;
 import io.github.johntortoise.utils.PageConvertUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -46,6 +46,14 @@ public class TortoiseConversationServiceImpl extends ServiceImpl<TortoiseConvers
     @Resource
     private TortoiseImportFileRecordService tortoiseImportFileRecordService;
 
+    @Resource
+    private TortoiseLlmConfigService tortoiseLlmConfigService;
+
+    @Resource
+    private TortoiseMemoryPolicyService memoryPolicyService;
+    @Autowired
+    private TortoiseMemoryPolicyService tortoiseMemoryPolicyService;
+
 
     @Override
     public Page<TortoiseConversationDTO> page(String conversationId, Long userId,
@@ -72,6 +80,7 @@ public class TortoiseConversationServiceImpl extends ServiceImpl<TortoiseConvers
             return PageConvertUtil.convert(page, conversation -> null);
         }
 
+
         Set<Long> profileIdSet = page.getRecords().stream()
                 .map(TortoiseConversation::getChatProfileId)
                 .filter(Objects::nonNull)
@@ -83,12 +92,34 @@ public class TortoiseConversationServiceImpl extends ServiceImpl<TortoiseConvers
         }
         
         List<TortoiseChatProfile> list = tortoiseChatProfileService.listByIds(profileIdSet);
-        Map<Long, TortoiseChatProfile> chatProfileMap = list.stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(TortoiseChatProfile::getId, Function.identity()));
+
+        Map<Long,String> llmConfigIdToNameMap = new HashMap<>();
+        Map<Long,String> memoryConfigIdToNameMap = new HashMap<>();
+        Map<Long, TortoiseChatProfile> chatProfileMap = new HashMap<>();
+
+        if(EmptyUtil.isNotEmpty(list)){
+            chatProfileMap = list.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(TortoiseChatProfile::getId, Function.identity()));
+
+            Set<Long> llmConfigIdSet = list.stream().map(TortoiseChatProfile::getLlmConfigId).collect(Collectors.toSet());
+            if(EmptyUtil.isNotEmpty(llmConfigIdSet)){
+                List<TortoiseLlmConfig> tortoiseLlmConfigs = tortoiseLlmConfigService.listByIds(llmConfigIdSet);
+                llmConfigIdToNameMap = tortoiseLlmConfigs.stream().collect(Collectors.toMap(TortoiseLlmConfig::getId,TortoiseLlmConfig::getConfigName));
+            }
+            Set<Long> memoryPolicyIdSet = list.stream().map(TortoiseChatProfile::getMemoryPolicyId).collect(Collectors.toSet());
+            if(EmptyUtil.isNotEmpty(memoryPolicyIdSet)){
+                List<TortoiseMemoryPolicy> tortoiseMemoryPolicies = tortoiseMemoryPolicyService.listByIds(memoryPolicyIdSet);
+                memoryConfigIdToNameMap = tortoiseMemoryPolicies.stream().collect(Collectors.toMap(TortoiseMemoryPolicy::getId,TortoiseMemoryPolicy::getName));
+            }
+        }
+
+        Map<Long, TortoiseChatProfile> finalChatProfileMap = chatProfileMap;
+        Map<Long, String> finalLlmConfigIdToNameMap = llmConfigIdToNameMap;
+        Map<Long, String> finalMemoryConfigIdToNameMap = memoryConfigIdToNameMap;
 
         return PageConvertUtil.convert(page, conversation ->
-                TortoiseConversation.covertToDTO(conversation, chatProfileMap));
+                TortoiseConversation.covertToDTO(conversation, finalChatProfileMap, finalLlmConfigIdToNameMap, finalMemoryConfigIdToNameMap));
     }
 
 
@@ -146,7 +177,20 @@ public class TortoiseConversationServiceImpl extends ServiceImpl<TortoiseConvers
         
         HashMap<Long, TortoiseChatProfile> map = new HashMap<>();
         map.put(conversation.getChatProfileId(), chatProfile);
-        return TortoiseConversation.covertToDTO(conversation, map);
+
+        Long llmConfigId = chatProfile.getLlmConfigId();
+        Long memoryPolicyId = chatProfile.getMemoryPolicyId();
+
+        TortoiseLlmConfig tortoiseLlmConfig = tortoiseLlmConfigService.getById(llmConfigId);
+        TortoiseMemoryPolicy tortoiseMemoryPolicy = tortoiseMemoryPolicyService.getById(memoryPolicyId);
+
+        HashMap<Long,String> llmConfigIdToNameMap = new HashMap<>();
+        llmConfigIdToNameMap.put(llmConfigId,tortoiseLlmConfig.getConfigName());
+
+        Map<Long,String> memoryConfigIdToNameMap = new HashMap<>();
+        memoryConfigIdToNameMap.put(memoryPolicyId,tortoiseMemoryPolicy.getName());
+
+        return TortoiseConversation.covertToDTO(conversation, map,llmConfigIdToNameMap,memoryConfigIdToNameMap);
     }
 
     @Override

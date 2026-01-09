@@ -4,7 +4,8 @@ public enum RoleEnum {
     
     SYSTEM("system", "系统"),
     USER("user", "用户"),
-    ASSISTANT("assistant","助手")
+    ASSISTANT("assistant","助手"),
+    TOOL("tool","工具")
 
  ;
     

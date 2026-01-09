@@ -51,16 +51,21 @@ public class TortoiseConversation {
 
 
     public static TortoiseConversationDTO covertToDTO(TortoiseConversation tortoiseConversation,
-                                                      Map<Long, TortoiseChatProfile> chatProfileMap){
+                                                      Map<Long, TortoiseChatProfile> chatProfileMap,
+                                                      Map<Long,String> llmConfigIdToNameMap,
+                                                      Map<Long,String> memoryConfigIdToNameMap){
 
         TortoiseChatProfile tortoiseChatProfile = chatProfileMap.get(tortoiseConversation.getChatProfileId());
 
         return TortoiseConversationDTO.builder()
                 .id(tortoiseConversation.getId())
                 .tortoiseChatProfileId(tortoiseConversation.getChatProfileId())
+                .tortoiseChatProfileIdName(tortoiseChatProfile.getName())
                 .conversationId(tortoiseConversation.getConversationId())
                 .memoryPolicyId(tortoiseChatProfile.getMemoryPolicyId())
+                .memoryPolicyName(memoryConfigIdToNameMap.get(tortoiseChatProfile.getMemoryPolicyId()))
                 .llmConfigId(tortoiseChatProfile.getLlmConfigId())
+                .llmConfigName(llmConfigIdToNameMap.get(tortoiseChatProfile.getLlmConfigId()))
                 .createUserId(tortoiseConversation.getCreateUserId())
                 .createTime(tortoiseConversation.getCreateTime())
                 .updateTime(tortoiseConversation.getUpdateTime())

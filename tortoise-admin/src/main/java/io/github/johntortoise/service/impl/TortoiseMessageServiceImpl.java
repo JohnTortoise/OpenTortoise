@@ -6,18 +6,25 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.johntortoise.core.dto.model.Message;
 import io.github.johntortoise.core.dto.sys.AfterChatDTO;
+import io.github.johntortoise.core.dto.sys.LLmInvokeResp;
 import io.github.johntortoise.core.enums.ErrorCodeEnum;
 import io.github.johntortoise.core.exceptions.TortoiseBusinessException;
+import io.github.johntortoise.core.utils.EmptyUtil;
 import io.github.johntortoise.core.utils.LogUtil;
+import io.github.johntortoise.core.utils.ObjectMapperUtil;
+import io.github.johntortoise.dto.MessageDTO;
 import io.github.johntortoise.generator.UniqueIdGenerator;
 import io.github.johntortoise.dto.TortoiseConversationDTO;
 import io.github.johntortoise.enums.DeletedEnum;
 import io.github.johntortoise.enums.TortoiseLlmUsageEnum;
 import io.github.johntortoise.mapper.TortoiseMessageMapper;
 import io.github.johntortoise.model.TortoiseConversation;
+import io.github.johntortoise.model.TortoiseLlmUsage;
 import io.github.johntortoise.model.TortoiseMessage;
+import io.github.johntortoise.model.TortoiseMessageExtend;
 import io.github.johntortoise.service.TortoiseConversationService;
 import io.github.johntortoise.service.TortoiseLlmUsageService;
+import io.github.johntortoise.service.TortoiseMessageExtendService;
 import io.github.johntortoise.service.TortoiseMessageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -44,8 +51,11 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
     @Lazy
     private TortoiseLlmUsageService tortoiseLlmUsageService;
 
+    @Resource
+    private TortoiseMessageExtendService tortoiseMessageExtendService;
+
     @Override
-    public Page<Message> page(String conversationId, Long current, Long size) {
+    public Page<MessageDTO> page(String conversationId, Long current, Long size) {
         if (conversationId == null || conversationId.trim().isEmpty()) {
             throw new IllegalArgumentException("对话ID不能为空");
         }
@@ -62,18 +72,26 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
                 .orderByAsc(TortoiseMessage::getCreateTime);
         Page<TortoiseMessage> page = this.baseMapper.selectPage(new Page<>(current, size), queryWrapper);
 
-        List<Message> messages = new ArrayList<>();
+        List<MessageDTO> messages = new ArrayList<>();
 
         page.getRecords().forEach(tortoiseMessage -> {
             if (tortoiseMessage.getInputContent() != null && tortoiseMessage.getInputRole() != null) {
-                messages.add(new Message(tortoiseMessage.getInputContent(), tortoiseMessage.getInputRole()));
+                MessageDTO messageDTO = new MessageDTO();
+                messageDTO.setId(tortoiseMessage.getId());
+                messageDTO.setContent(tortoiseMessage.getInputContent());
+                messageDTO.setRole(tortoiseMessage.getInputRole());
+                messages.add(messageDTO);
             }
             if (tortoiseMessage.getOutputContent() != null && tortoiseMessage.getOutputRole() != null) {
-                messages.add(new Message(tortoiseMessage.getOutputContent(), tortoiseMessage.getOutputRole()));
+                MessageDTO messageDTO = new MessageDTO();
+                messageDTO.setId(tortoiseMessage.getId());
+                messageDTO.setContent(tortoiseMessage.getOutputContent());
+                messageDTO.setRole(tortoiseMessage.getOutputRole());
+                messages.add(messageDTO);
             }
         });
 
-        Page<Message> targetPage = new Page<>(
+        Page<MessageDTO> targetPage = new Page<>(
                 page.getCurrent(),
                 page.getSize(),
                 page.getTotal()
@@ -84,9 +102,55 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
         return targetPage;
     }
 
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void writeMessagesAndRecordUsage(String conversationId, Message input, Message outPut, AfterChatDTO afterChatDTO) {
+        valid(conversationId,input,outPut);
+
+        try {
+            LogUtil.debug("写入消息: conversationId={}", conversationId);
+            
+            TortoiseConversationDTO tortoiseConversation = tortoiseConversationService.getByConversationId(conversationId);
+            if (Objects.isNull(tortoiseConversation)) {
+                throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, "会话不存在");
+            }
+
+            Long messageId = saveMessageAndReturnId(conversationId, input, outPut);
+
+            updateQAndCount(tortoiseConversation);
+
+            if(Objects.nonNull(afterChatDTO)){
+                tortoiseMessageExtendService.saveExtend(afterChatDTO,messageId);
+                saveLlmUsage(afterChatDTO);
+            }
+
+            LogUtil.debug("写入消息成功: conversationId={}", conversationId);
+        } catch (TortoiseBusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            LogUtil.error("写入消息失败: conversationId={}", conversationId, e);
+            throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, "写入消息失败", e);
+        }
+    }
+
+
+    public Long saveMessageAndReturnId(String conversationId, Message input, Message outPut){
+        TortoiseMessage build = TortoiseMessage.builder()
+                .conversationId(conversationId)
+                .inputContent(input.getContent())
+                .inputRole(input.getRole())
+                .outputContent(outPut.getContent())
+                .outputRole(outPut.getRole())
+                .uniqueId(UniqueIdGenerator.generateId())
+                .build();
+        this.save(build);
+        return build.getId();
+    }
+
+
+    public void valid(String conversationId, Message input, Message outPut){
         if (conversationId == null || conversationId.trim().isEmpty()) {
             throw new IllegalArgumentException("对话ID不能为空");
         }
@@ -96,47 +160,35 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
         if (outPut == null) {
             throw new IllegalArgumentException("输出消息不能为空");
         }
-        
-        try {
-            LogUtil.debug("写入消息: conversationId={}", conversationId);
-            
-            TortoiseConversationDTO tortoiseConversation =
-                    tortoiseConversationService.getByConversationId(conversationId);
-
-            if (Objects.isNull(tortoiseConversation)) {
-                throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, "会话不存在");
-            }
-
-            TortoiseMessage build = TortoiseMessage.builder()
-                    .conversationId(conversationId)
-                    .inputContent(input.getContent())
-                    .inputRole(input.getRole())
-                    .outputContent(outPut.getContent())
-                    .outputRole(outPut.getRole())
-                    .uniqueId(UniqueIdGenerator.generateId())
-                    .build();
-            this.save(build);
-
-            
-            Integer qAndACount = tortoiseConversation.getQAndACount();
-            if (Objects.isNull(qAndACount)) {
-                qAndACount = 0;
-            }
-            TortoiseConversation conversation = new TortoiseConversation();
-            conversation.setQAndACount(qAndACount + 1);
-            conversation.setId(tortoiseConversation.getId());
-            tortoiseConversationService.updateById(conversation);
-            if(Objects.nonNull(afterChatDTO)){
-                tortoiseLlmUsageService.recordUsage(afterChatDTO, TortoiseLlmUsageEnum.CONVERSATION);
-            }
-            LogUtil.debug("写入消息成功: conversationId={}, qAndACount={}", conversationId, qAndACount + 1);
-        } catch (TortoiseBusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            LogUtil.error("写入消息失败: conversationId={}", conversationId, e);
-            throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR, "写入消息失败", e);
-        }
     }
+
+
+    public void updateQAndCount(TortoiseConversationDTO tortoiseConversation){
+        Integer qAndACount = tortoiseConversation.getQAndACount();
+        if (Objects.isNull(qAndACount)) {
+            qAndACount = 0;
+        }
+
+        TortoiseConversation conversation = new TortoiseConversation();
+        conversation.setQAndACount(qAndACount + 1);
+        conversation.setId(tortoiseConversation.getId());
+        tortoiseConversationService.updateById(conversation);
+    }
+
+
+    public void saveLlmUsage(AfterChatDTO afterChatDTO){
+        List<LLmInvokeResp.AllChat> allChatInfo = afterChatDTO.getAllChatInfo();
+        List<TortoiseLlmUsage> saveList = new ArrayList<>();
+        for(LLmInvokeResp.AllChat allChat:allChatInfo){
+            String req = allChat.getReq();
+            String resp = allChat.getResp();
+            TortoiseLlmUsage tortoiseLlmUsage = tortoiseLlmUsageService.generateDetail(req, resp, TortoiseLlmUsageEnum.CONVERSATION, afterChatDTO.getConversationId());
+            saveList.add(tortoiseLlmUsage);
+        }
+        tortoiseLlmUsageService.saveBatch(saveList);
+    }
+
+
 
     @Override
     public List<TortoiseMessage> listRecentByConversationId(String conversationId, Long limit) {

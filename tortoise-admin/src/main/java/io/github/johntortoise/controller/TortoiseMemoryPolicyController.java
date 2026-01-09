@@ -1,6 +1,7 @@
 package io.github.johntortoise.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.johntortoise.core.dto.sys.TortoiseBaseResult;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.dto.TortoiseMemoryPolicyDTO;
 import io.github.johntortoise.dto.TortoiseMemoryPolicyDetailDTO;
@@ -25,12 +26,12 @@ public class TortoiseMemoryPolicyController {
 
     
     @PostMapping("add")
-    public ResponseEntity<Void> addOrUpdate(@Valid @RequestBody TortoiseMemoryPolicyDetailDTO tortoiseMemoryPolicyDetailDTO) {
+    public TortoiseBaseResult<Void> addOrUpdate(@Valid @RequestBody TortoiseMemoryPolicyDetailDTO tortoiseMemoryPolicyDetailDTO) {
         try {
             LogUtil.info("新增记忆策略: name={}", tortoiseMemoryPolicyDetailDTO.getName());
             tortoiseMemoryPolicyService.addOrUpdate(tortoiseMemoryPolicyDetailDTO);
             LogUtil.info("新增记忆策略成功");
-            return ResponseEntity.ok().build();
+            return TortoiseBaseResult.ok();
         } catch (Exception e) {
             LogUtil.error("新增记忆策略失败: name={}", tortoiseMemoryPolicyDetailDTO.getName(), e);
             throw e;
