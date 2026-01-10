@@ -20,6 +20,19 @@
                         <i class="fas fa-history"></i>
                         历史会话
                     </h3>
+
+                    <!-- 搜索会话 -->
+                    <div class="mb-4">
+                        <div class="relative">
+                            <input type="text" id="conversation-search-input"
+                                   placeholder="搜索会话ID..."
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="conversations-list" class="space-y-2">
                         <!-- 历史会话将动态加载到这里 -->
                         <div class="text-center text-gray-500 text-sm py-8">
@@ -560,6 +573,7 @@
             const chatTitle = document.getElementById('chat-title');
             const chatSubtitle = document.getElementById('chat-subtitle');
             const typingIndicator = document.getElementById('typing-indicator');
+            const conversationSearchInput = document.getElementById('conversation-search-input');
 
             // 初始化页面
             initializePage();
@@ -594,6 +608,9 @@
 
                 // 设置输入框内容变化时启用/禁用发送按钮
                 messageInput.addEventListener('input', toggleSendButton);
+
+                // 设置会话搜索功能
+                conversationSearchInput.addEventListener('input', handleConversationSearch);
 
                 // 初始化工具选择状态
                 renderSelectedTools();
@@ -847,8 +864,13 @@
             }
 
 
-            function loadConversations() {
-                authenticatedFetch('/api/chat/conversations?pageNum=1&pageSize=50')
+            function loadConversations(conversationId = null) {
+                let url = '/api/chat/conversations?pageNum=1&pageSize=50';
+                if (conversationId && conversationId.trim()) {
+                    url += `&conversationId=${encodeURIComponent(conversationId.trim())}`;
+                }
+
+                authenticatedFetch(url)
                     .then(response => response.json())
                     .then(data => {
                         if (data.code === 200 && data.data.records) {
@@ -877,6 +899,15 @@
                         conversationsList.innerHTML = '<div class="text-center text-gray-500 text-sm py-4">加载失败</div>';
                         updateWelcomeMessageForFirstTime();
                     });
+            }
+
+            function handleConversationSearch(event) {
+                const searchValue = event.target.value.trim();
+                // 防抖处理，避免频繁请求
+                clearTimeout(window.conversationSearchTimeout);
+                window.conversationSearchTimeout = setTimeout(() => {
+                    loadConversations(searchValue);
+                }, 300);
             }
 
             function renderConversations(conversations) {
