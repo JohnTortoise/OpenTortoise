@@ -29,4 +29,6 @@ public interface TortoiseConversationService extends IService<TortoiseConversati
     
     void importExcel(Long recordId,String tempFilePath, String originalFilename);
 
+    String copyConversation(String conversationId);
+
 }

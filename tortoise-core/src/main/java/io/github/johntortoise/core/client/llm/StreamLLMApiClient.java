@@ -144,6 +144,7 @@ public class StreamLLMApiClient {
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
+                    LogUtil.error("onFailure",e);
                     if(Objects.nonNull(sysCallBack)){
                         sysCallBack.onFailure();
                     }
@@ -152,6 +153,7 @@ public class StreamLLMApiClient {
                 public void onResponse(Call call, Response response) {
                     if (!response.isSuccessful()) {
                         if(Objects.nonNull(sysCallBack)){
+                            responseBuilder.handleChatResponse(response,conversationId);
                             sysCallBack.onFailure();
                         }
                         return;

@@ -3,10 +3,10 @@ spring:
     name: tortoise-web
 
   datasource:
-    host: 127.0.0.1
+    host: 192.168.3.11
     port: 3306
     database: db_tortoise
-    url: jdbc:mysql://127.0.0.1:3306/db_tortoise?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://192.168.3.11:3306/db_tortoise?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
     username: root
     password: usiytvsiid5843
     driver-class-name: com.mysql.cj.jdbc.Driver

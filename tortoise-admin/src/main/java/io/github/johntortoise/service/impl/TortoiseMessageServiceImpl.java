@@ -32,10 +32,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -66,11 +65,8 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
             size = 10L;
         }
         
-        LambdaQueryWrapper<TortoiseMessage> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(TortoiseMessage::getConversationId, conversationId)
-                .eq(TortoiseMessage::getIsDeleted, DeletedEnum.EXIST.getCode())
-                .orderByAsc(TortoiseMessage::getCreateTime);
-        Page<TortoiseMessage> page = this.baseMapper.selectPage(new Page<>(current, size), queryWrapper);
+
+        Page<TortoiseMessage> page = queryPageByConversationId(conversationId,current,size);
 
         List<MessageDTO> messages = new ArrayList<>();
 
@@ -102,6 +98,14 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
         return targetPage;
     }
 
+
+    public Page<TortoiseMessage> queryPageByConversationId(String conversationId,Long current,Long size){
+        LambdaQueryWrapper<TortoiseMessage> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TortoiseMessage::getConversationId, conversationId)
+                .eq(TortoiseMessage::getIsDeleted, DeletedEnum.EXIST.getCode())
+                .orderByAsc(TortoiseMessage::getCreateTime);
+        return this.baseMapper.selectPage(new Page<>(current, size), queryWrapper);
+    }
 
 
     @Override
@@ -240,5 +244,30 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
     public List<TortoiseMessage> findByUniqueIdList(Set<String> uniqueIdSet) {
         return this.list(new QueryWrapper<TortoiseMessage>().lambda()
                 .in(TortoiseMessage::getUniqueId,uniqueIdSet));
+    }
+
+    @Override
+    public void copyMessage(String sourceConversationId, String targetConversationId) {
+        Long pageNum = 1L;
+        while (true){
+            Page<TortoiseMessage> tortoiseMessagePage = queryPageByConversationId(sourceConversationId, pageNum, 100L);
+            if(EmptyUtil.isEmpty(tortoiseMessagePage.getRecords())){
+                break;
+            }
+            List<Long> messageIdList =
+                    tortoiseMessagePage.getRecords().stream().map(TortoiseMessage::getId).collect(Collectors.toList());
+            List<TortoiseMessageExtend> tortoiseMessageExtends = tortoiseMessageExtendService.getByMessageIdList(messageIdList);
+            Map<Long, TortoiseMessageExtend> messageIdToExtentMap =
+                    tortoiseMessageExtends.stream().collect(Collectors.toMap(TortoiseMessageExtend::getMessageId,
+                    Function.identity()));
+            Map<String,TortoiseMessage> map = new HashMap<>();
+            for(TortoiseMessage tortoiseMessage:tortoiseMessagePage.getRecords()){
+                map.put(tortoiseMessage.getConversationId(),tortoiseMessage);
+                tortoiseMessage.setId(null);
+                tortoiseMessage.setConversationId(targetConversationId);
+            }
+            this.saveBatch(tortoiseMessagePage.getRecords());
+
+        }
     }
 }

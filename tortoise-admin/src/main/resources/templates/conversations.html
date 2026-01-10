@@ -678,6 +678,10 @@
                                     <i class="fas fa-dollar-sign text-slate-600 text-xs"></i>
                                     成本
                                 </button>
+                                <button onclick="copyConversation('${conversation.conversationId}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-green-200">
+                                    <i class="fas fa-copy text-green-600 text-xs"></i>
+                                    复制会话
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -1179,7 +1183,42 @@
                     </tr>
                 `).join('');
             }
-            
+
+            function copyConversation(conversationId) {
+                if (!conversationId) {
+                    showToast('会话ID不能为空', 'error');
+                    return;
+                }
+
+                // 显示加载状态
+                showToast('正在复制会话...', 'info');
+
+                // 调用复制接口
+                authenticatedFetch(`/api/conversations/copyConversation?conversationId=${conversationId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.code === 200) {
+                        showToast('会话复制成功，正在跳转到聊天页面...', 'success');
+
+                        // 延迟一秒后跳转到聊天页面
+                        setTimeout(() => {
+                            switchPage('chat');
+                        }, 1000);
+                    } else {
+                        throw new Error(data.msg || '复制会话失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('复制会话失败:', error);
+                    showToast('复制会话失败: ' + error.message, 'error');
+                });
+            }
+
             function renderCostsPagination(pageData) {
                 const costsPaginationContainer = document.getElementById('costs-pagination-container');
                 // If pagination container doesn't exist, create it
@@ -1865,6 +1904,7 @@
             window.showDetails = showDetails;
             window.showMemory = showMemory;
             window.showCost = showCost;
+            window.copyConversation = copyConversation;
             window.closeDetailModal = closeDetailModal;
             window.closeMemoryModal = closeMemoryModal;
             window.closeCostModal = closeCostModal;

@@ -4,16 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.github.johntortoise.context.TortoiseContext;
 import io.github.johntortoise.core.utils.EmptyUtil;
 import io.github.johntortoise.core.utils.LogUtil;
 import io.github.johntortoise.generator.UniqueIdGenerator;
 import io.github.johntortoise.dto.TortoiseConversationDTO;
 import io.github.johntortoise.enums.DeletedEnum;
 import io.github.johntortoise.mapper.TortoiseConversationMapper;
-import io.github.johntortoise.model.TortoiseChatProfile;
-import io.github.johntortoise.model.TortoiseConversation;
-import io.github.johntortoise.model.TortoiseLlmConfig;
-import io.github.johntortoise.model.TortoiseMemoryPolicy;
+import io.github.johntortoise.model.*;
 import io.github.johntortoise.service.*;
 import io.github.johntortoise.utils.PageConvertUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +51,12 @@ public class TortoiseConversationServiceImpl extends ServiceImpl<TortoiseConvers
     private TortoiseMemoryPolicyService memoryPolicyService;
     @Autowired
     private TortoiseMemoryPolicyService tortoiseMemoryPolicyService;
+
+    @Resource
+    private TortoiseMessageService tortoiseMessageService;
+
+    @Resource
+    private TortoiseMessageExtendService tortoiseMessageExtendService;
 
 
     @Override
@@ -256,10 +260,55 @@ public class TortoiseConversationServiceImpl extends ServiceImpl<TortoiseConvers
         }
     }
 
+    @Override
+    public String copyConversation(String conversationId) {
+        TortoiseConversationDTO tortoiseConversationDTO = this.getByConversationId(conversationId);
+        Long currentUserId = TortoiseContext.getCurrentUserId();
+        TortoiseConversation conversation = createConversation(tortoiseConversationDTO.getTortoiseChatProfileId(), currentUserId);
 
 
+        Long pageNum = 1L;
+        while (true){
+            Page<TortoiseMessage> tortoiseMessagePage =
+                    tortoiseMessageService.queryPageByConversationId(conversationId, pageNum,
+                    100L);
+            if(EmptyUtil.isEmpty(tortoiseMessagePage.getRecords())){
+                break;
+            }
+            List<Long> messageIdList =
+                    tortoiseMessagePage.getRecords().stream().map(TortoiseMessage::getId).collect(Collectors.toList());
+            List<TortoiseMessageExtend> tortoiseMessageExtends = tortoiseMessageExtendService.getByMessageIdList(messageIdList);
+            Map<Long, TortoiseMessageExtend> messageIdToExtentMap =
+                    tortoiseMessageExtends.stream().collect(Collectors.toMap(TortoiseMessageExtend::getMessageId,
+                            Function.identity()));
+            Map<Long,TortoiseMessage> map = new HashMap<>();
+            for(TortoiseMessage tortoiseMessage:tortoiseMessagePage.getRecords()){
+                map.put(tortoiseMessage.getId(),tortoiseMessage);
+                tortoiseMessage.setId(null);
+                tortoiseMessage.setConversationId(conversation.getConversationId());
+                tortoiseMessage.setUniqueId(UniqueIdGenerator.generateId());
+            }
+            tortoiseMessageService.saveBatch(tortoiseMessagePage.getRecords());
 
+            List<TortoiseMessageExtend> saveExtendList = new ArrayList<>();
 
+            map.forEach((messageId,tortoiseMessage)->{
+                TortoiseMessageExtend tortoiseMessageExtend = messageIdToExtentMap.getOrDefault(messageId, null);
+                if(Objects.nonNull(tortoiseMessageExtend)){
+                    tortoiseMessageExtend.setMessageId(tortoiseMessage.getId());
+                    tortoiseMessageExtend.setId(null);
+                    saveExtendList.add(tortoiseMessageExtend);
+                }
+            });
+
+            if(EmptyUtil.isNotEmpty(saveExtendList)){
+                tortoiseMessageExtendService.saveBatch(saveExtendList);
+            }
+
+            pageNum++;
+        }
+        return conversation.getConversationId();
+    }
 
 
 }

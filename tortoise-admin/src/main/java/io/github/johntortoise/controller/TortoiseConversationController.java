@@ -139,4 +139,10 @@ public class TortoiseConversationController {
         Long recordId = tortoiseImportFileRecordService.saveAndReturnId(TortoiseContext.getCurrentUserId(), originalFilename);
         tortoiseImportFileRecordService.success(recordId);
     }
+
+
+    @GetMapping("copyConversation")
+    public TortoiseBaseResult<String> copyConversation(@RequestParam String conversationId){
+        return TortoiseBaseResult.ok(conversationService.copyConversation(conversationId));
+    }
 }

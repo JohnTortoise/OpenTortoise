@@ -1,6 +1,7 @@
 package io.github.johntortoise.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.github.johntortoise.core.dto.model.Message;
@@ -48,6 +49,15 @@ public class TortoiseMessageExtendServiceImpl extends ServiceImpl<TortoiseMessag
         }
     }
 
+    @Override
+    public List<TortoiseMessageExtend> getByMessageIdList(List<Long> messageIdList) {
+        if(EmptyUtil.isEmpty(messageIdList)){
+            return new ArrayList<>();
+        }
+        return this.list(new QueryWrapper<TortoiseMessageExtend>().lambda()
+                .in(TortoiseMessageExtend::getMessageId, messageIdList)
+                .eq(TortoiseMessageExtend::getIsDeleted, DeletedEnum.EXIST.getCode()));
+    }
 
 
     @Override

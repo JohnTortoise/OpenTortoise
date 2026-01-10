@@ -13,6 +13,8 @@ public interface TortoiseMessageExtendService extends IService<TortoiseMessageEx
 
     List<LLmInvokeResp.Event> getByMessageId(Long messageId);
 
+    List<TortoiseMessageExtend> getByMessageIdList(List<Long> messageIdList);
+
     void saveExtend(AfterChatDTO afterChatDTO,Long id);
 }
 
