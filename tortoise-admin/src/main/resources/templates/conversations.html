@@ -710,9 +710,14 @@
                 detailModal.currentPage = 1;
                 detailModal.hasMore = true;
                 detailModal.loading = false;
+                detailModal.isInitialLoad = true;
+                detailModal.pageSize = 2; // 每页数量
 
-                // 添加滚动事件监听器
-                messagesContainer.addEventListener('scroll', handleScroll);
+                // 添加滚动事件监听器（如果还没有添加）
+                if (!detailModal.scrollListenerAdded) {
+                    messagesContainer.addEventListener('scroll', handleScroll);
+                    detailModal.scrollListenerAdded = true;
+                }
 
                 // 使用DetailConversationPanel加载消息
                 if (window.DetailConversationPanel && window.DetailConversationPanel.loadMessages) {
@@ -739,98 +744,77 @@
                 }
             }
             
-            function loadMessages(conversationId, pageNum, pageSize) {
-                const detailModal = document.getElementById('detail-modal');
-                const messagesContainer = document.getElementById('modal-messages-container');
-                const loadingIndicator = document.getElementById('loading-indicator');
-                const noMoreMessages = document.getElementById('no-more-messages');
-                
-                // 如果已经在加载或没有更多数据，则直接返回
-                if (detailModal.loading || !detailModal.hasMore) {
-                    return;
-                }
-                
-                // 设置加载状态
-                detailModal.loading = true;
-                if (pageNum === 1) {
-                    messagesContainer.innerHTML = '<div class="text-center text-gray-500">加载中...</div>';
-                }
-                loadingIndicator.classList.remove('hidden');
-                
-                // Load messages
-                const params = new URLSearchParams({
-                    conversationId: conversationId,
-                    pageNum: pageNum,
-                    pageSize: pageSize
-                });
-                
-                authenticatedFetch(`/api/messages/page?${params}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // 处理TortoiseBaseResult格式
-                        let actualData = data;
-                        if (data && data.hasOwnProperty('code')) {
-                            if (data.code === 200) {
-                                actualData = data.data;
-                            } else {
-                                throw new Error(data.msg || '加载消息失败');
-                            }
-                        }
-                        
-                        detailModal.loading = false;
-                        loadingIndicator.classList.add('hidden');
-                        
-                        if (actualData.records && actualData.records.length > 0) {
-                            renderMessages(actualData.records, pageNum === 1);
-                            
-                            // 更新分页信息
-                            detailModal.currentPage = actualData.current;
-                            detailModal.totalPages = actualData.pages; // 保存总页数
-                            detailModal.hasMore = actualData.current < actualData.pages;
-                            
-                            // 如果没有更多数据，显示提示
-                            if (!detailModal.hasMore) {
-                                noMoreMessages.classList.remove('hidden');
-                            }
-                        } else {
-                            if (pageNum === 1) {
-                                messagesContainer.innerHTML = '<div class="text-center text-gray-500">暂无消息</div>';
-                            }
-                            detailModal.hasMore = false;
-                            noMoreMessages.classList.remove('hidden');
-                        }
-                    })
-                    .catch(error => {
-                        detailModal.loading = false;
-                        loadingIndicator.classList.add('hidden');
-                        
-                        if (pageNum === 1) {
-                            messagesContainer.innerHTML = '<div class="text-center text-red-500">加载失败</div>';
-                        }
-                        showToast('加载会话详情失败', false);
-                    });
-            }
-            
             function handleScroll(event) {
                 const detailModal = document.getElementById('detail-modal');
                 const scrollContainer = event.target;
 
-                // 检查是否滚动到底部（留出一定的缓冲区）
-                const isNearBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 200;
+                // 检查是否滚动到顶部（留出一定的缓冲区，比如 50px）
+                const isNearTop = scrollContainer.scrollTop <= 50;
 
-                if (isNearBottom && detailModal.hasMore && !detailModal.loading) {
-                    loadMessages(detailModal.conversationId, detailModal.currentPage + 1, 10);
+                if (isNearTop && detailModal.hasMore && !detailModal.loading && detailModal.conversationId) {
+                    loadNextPageForDetail();
                 }
             }
             
-            function renderMessages(messages, clearExisting = false) {
+            // 加载下一页消息（详情弹窗）
+            function loadNextPageForDetail() {
+                const detailModal = document.getElementById('detail-modal');
+                const messagesContainer = document.getElementById('modal-messages-container');
+                
+                if (detailModal.loading || !detailModal.hasMore || !detailModal.conversationId) return;
+                
+                detailModal.loading = true;
+                const nextPage = detailModal.currentPage + 1;
+                const pageSize = detailModal.pageSize || 2;
+                
+                // 显示加载指示器
+                const loadingIndicator = document.createElement('div');
+                loadingIndicator.id = 'loading-older-messages-modal';
+                loadingIndicator.className = 'text-center text-gray-500 py-4';
+                loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>加载更早的消息...';
+                const firstMessage = messagesContainer.querySelector('[data-message-id]') || messagesContainer.firstElementChild;
+                if (firstMessage) {
+                    messagesContainer.insertBefore(loadingIndicator, firstMessage);
+                } else {
+                    messagesContainer.appendChild(loadingIndicator);
+                }
+                
+                authenticatedFetch(`/api/messages/page?conversationId=${detailModal.conversationId}&pageNum=${nextPage}&pageSize=${pageSize}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // 移除加载指示器
+                        const indicator = document.getElementById('loading-older-messages-modal');
+                        if (indicator) indicator.remove();
+                        
+                        if (data.code === 200 && data.data) {
+                            const pageData = data.data;
+                            if (pageData.records && pageData.records.length > 0) {
+                                // 追加新消息到顶部
+                                renderMessages(pageData.records, false, true);
+                                detailModal.currentPage = nextPage;
+                                detailModal.hasMore = pageData.current < pageData.pages;
+                            } else {
+                                detailModal.hasMore = false;
+                            }
+                        } else {
+                            detailModal.hasMore = false;
+                        }
+                        detailModal.loading = false;
+                    })
+                    .catch(error => {
+                        console.error('加载更早消息失败:', error);
+                        // 移除加载指示器
+                        const indicator = document.getElementById('loading-older-messages-modal');
+                        if (indicator) indicator.remove();
+                        detailModal.loading = false;
+                        showToast('加载更早消息失败', false);
+                    });
+            }
+            
+            function renderMessages(messages, clearExisting = false, isAppendingToTop = false) {
                 const messagesContainer = document.getElementById('modal-messages-container');
                 const scrollContainer = document.getElementById('modal-messages-container');
+                const detailModal = document.getElementById('detail-modal');
 
                 if (!messages || messages.length === 0) {
                     if (clearExisting) {
@@ -839,59 +823,100 @@
                     return;
                 }
 
-                // 如果是首次加载，清空容器并创建新的容器
-                if (clearExisting) {
-                    messagesContainer.innerHTML = '<div class="space-y-4" id="messages-list"></div>';
+                // 如果是首次加载，清空容器（聊天样式不需要额外包装容器）
+                if (clearExisting && !isAppendingToTop) {
+                    messagesContainer.innerHTML = '';
                 }
 
-                // 获取消息列表容器
-                const messagesList = document.getElementById('messages-list') || messagesContainer.querySelector('.space-y-4') || messagesContainer;
+                // 获取消息列表容器（直接使用 messagesContainer，因为聊天样式自带间距）
+                const messagesList = messagesContainer;
 
-                // 生成消息HTML
-                const messagesHtml = messages.map((message, index) => `
-                    <div class="flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}">
-                        <div class="border rounded-lg p-4 max-w-md ${message.role === 'user' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}">
-                            <div class="font-medium ${message.role === 'user' ? 'text-blue-700' : 'text-green-700'}">
-                                ${message.role === 'user' ? '用户' : '助手'}
+                // 格式化消息内容
+                function formatMessageContent(content) {
+                    if (!content) return '';
+                    return content.replace(/\n/g, '<br>');
+                }
+
+                // 创建单个消息HTML（添加 data-message-id 属性，使用聊天样式）
+                function createMessageHTML(message) {
+                    return `
+                        <div class="flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}" data-message-id="${message.id || ''}">
+                            ${message.role !== 'user' ? `
+                                <div class="message-avatar assistant flex items-center justify-center">
+                                    <i class="fas fa-robot text-sm"></i>
+                                </div>
+                            ` : ''}
+                            <div class="message-bubble ${message.role === 'user' ? 'user' : 'assistant'}">
+                                ${message.role === 'assistant' ? `
+                                    <div class="message-events" id="modal-events-${message.id}" style="display: none;">
+                                        <div class="events-loading text-xs text-gray-500 mb-2 p-2 bg-gray-50 rounded">
+                                            <i class="fas fa-spinner fa-spin mr-1"></i>
+                                            加载事件详情...
+                                        </div>
+                                        <div class="events-content hidden"></div>
+                                    </div>
+                                ` : ''}
+                                <div class="message-content">
+                                    ${formatMessageContent(message.content)}
+                                </div>
+                                ${message.role === 'assistant' ? `
+                                    <div class="message-actions mt-2 flex justify-end">
+                                        <button onclick="DetailConversationPanel.toggleMessageEvents(${message.id})"
+                                                class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 transition-colors flex items-center gap-1">
+                                            <span>详情</span>
+                                            <i class="fas fa-chevron-down text-xs transform transition-transform duration-200"></i>
+                                        </button>
+                                    </div>
+                                ` : ''}
                             </div>
-                            <div class="mt-2 text-gray-700 whitespace-pre-wrap">${message.content || ''}</div>
-                            <div class="mt-2 text-xs text-gray-500">${message.timestamp || ''}</div>
+                            ${message.role === 'user' ? `
+                                <div class="message-avatar user flex items-center justify-center">
+                                    <i class="fas fa-user text-sm"></i>
+                                </div>
+                            ` : ''}
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }
 
-                // 如果是首次加载，直接设置内容；否则追加到现有内容的后面
-                if (clearExisting) {
-                    messagesList.innerHTML = messagesHtml;
-                } else {
-                    // 临时禁用滚动事件监听器
-                    const detailModal = document.getElementById('detail-modal');
-                    const originalHasMore = detailModal.hasMore;
-                    const originalLoading = detailModal.loading;
-
-                    // 设置标志位防止滚动事件触发
-                    detailModal.hasMore = false;
-                    detailModal.loading = true;
-
-                    // 记录插入新内容前的高度
-                    const previousScrollHeight = scrollContainer.scrollHeight;
-
-                    // 在现有内容后面追加新内容
-                    messagesList.insertAdjacentHTML('beforeend', messagesHtml);
-
-                    // 计算新内容的高度
+                if (isAppendingToTop) {
+                    // 追加到顶部：将新消息插入到现有消息的前面
+                    const fragment = document.createDocumentFragment();
+                    messages.forEach(message => {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = createMessageHTML(message);
+                        fragment.appendChild(tempDiv.firstElementChild);
+                    });
+                    
+                    // 保存当前滚动位置
+                    const oldScrollHeight = scrollContainer.scrollHeight;
+                    const oldScrollTop = scrollContainer.scrollTop;
+                    
+                    // 插入到第一个消息之前
+                    const firstMessage = messagesList.querySelector('[data-message-id]') || messagesList.firstElementChild;
+                    if (firstMessage) {
+                        messagesList.insertBefore(fragment, firstMessage);
+                    } else {
+                        messagesList.appendChild(fragment);
+                    }
+                    
+                    // 恢复滚动位置（保持用户看到的消息位置不变）
                     const newScrollHeight = scrollContainer.scrollHeight;
-                    const addedHeight = newScrollHeight - previousScrollHeight;
-
-                    // 延迟执行滚动位置调整，避免与DOM更新冲突
-                    setTimeout(() => {
-                        // 将滚动条定位到新内容的开始位置
-                        scrollContainer.scrollTop = previousScrollHeight - 50; // 稍微向上一点，让用户能看到新内容的开始
-
-                        // 恢复标志位
-                        detailModal.hasMore = originalHasMore;
-                        detailModal.loading = originalLoading;
-                    }, 50);
+                    scrollContainer.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight);
+                } else if (clearExisting) {
+                    // 首次加载，直接设置内容
+                    messagesList.innerHTML = messages.map(createMessageHTML).join('');
+                    
+                    // 首次加载时滚动到底部
+                    if (detailModal && detailModal.isInitialLoad) {
+                        setTimeout(() => {
+                            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                            detailModal.isInitialLoad = false;
+                        }, 100);
+                    }
+                } else {
+                    // 向后追加（保留原有逻辑，以防其他地方使用）
+                    const messagesHtml = messages.map(createMessageHTML).join('');
+                    messagesList.insertAdjacentHTML('beforeend', messagesHtml);
                 }
             }
             
@@ -899,17 +924,15 @@
                 const detailModal = document.getElementById('detail-modal');
                 const scrollContainer = document.getElementById('modal-messages-container');
 
-                // 移除滚动事件监听器（如果容器存在）
-                if (scrollContainer) {
-                    scrollContainer.removeEventListener('scroll', handleScroll);
+                // 重置模态框状态（不移除滚动监听器，因为每次打开都会检查是否已添加）
+                if (detailModal) {
+                    detailModal.classList.remove('active');
+                    detailModal.conversationId = null;
+                    detailModal.currentPage = 1;
+                    detailModal.hasMore = true;
+                    detailModal.loading = false;
+                    detailModal.isInitialLoad = false;
                 }
-
-                // 重置模态框状态
-                detailModal.classList.remove('active');
-                detailModal.conversationId = null;
-                detailModal.currentPage = 1;
-                detailModal.hasMore = true;
-                detailModal.loading = false;
 
                 // 隐藏加载指示器和无更多消息提示
                 const loadingIndicator = document.getElementById('loading-indicator');
@@ -2105,15 +2128,35 @@
             window.DetailConversationPanel = {
                 loadMessages: function (conversationId) {
                     if (!conversationId) return;
-                    authenticatedFetch(`/api/messages/page?conversationId=${conversationId}&page=1&size=100`)
+                    
+                    const detailModal = document.getElementById('detail-modal');
+                    if (!detailModal) return;
+                    
+                    // 重置状态
+                    detailModal.conversationId = conversationId;
+                    detailModal.currentPage = 1;
+                    detailModal.hasMore = true;
+                    detailModal.loading = false;
+                    detailModal.isInitialLoad = true;
+                    detailModal.pageSize = detailModal.pageSize || 2;
+                    
+                    authenticatedFetch(`/api/messages/page?conversationId=${conversationId}&pageNum=1&pageSize=${detailModal.pageSize}`)
                         .then(response => response.json())
                         .then(data => {
-                            if (data.code === 200 && data.data.records) {
-                                renderMessages(data.data.records);
+                            if (data.code === 200 && data.data) {
+                                const pageData = data.data;
+                                if (pageData.records && pageData.records.length > 0) {
+                                    renderMessages(pageData.records, true, false);
+                                    detailModal.hasMore = pageData.current < pageData.pages;
+                                } else {
+                                    renderMessages([], true, false);
+                                    detailModal.hasMore = false;
+                                }
                             }
                         })
                         .catch(() => {
                             showToast('加载消息失败', false);
+                            if (detailModal) detailModal.isInitialLoad = false;
                         });
                 },
                 toggleMessageEvents: function (messageId) {

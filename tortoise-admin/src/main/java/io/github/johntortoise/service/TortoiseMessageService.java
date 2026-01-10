@@ -21,7 +21,7 @@ public interface TortoiseMessageService extends IService<TortoiseMessage> {
     
     List<TortoiseMessage> listRecentByConversationId(String conversationId, Long limit);
 
-    Page<TortoiseMessage> queryPageByConversationId(String conversationId,Long current,Long size);
+    Page<TortoiseMessage> queryPageByConversationId(String conversationId,Long current,Long size,Boolean asc);
 
     List<TortoiseMessage> listByConversationIdAndGreaterThanId(String conversationId, Long lastMessageId);
 
@@ -29,7 +29,5 @@ public interface TortoiseMessageService extends IService<TortoiseMessage> {
     TortoiseMessage findGtLastMessageId(String conversationId, Long lastMessage, Boolean asc);
 
     List<TortoiseMessage> findByUniqueIdList(Set<String> uniqueIdSet);
-
-    void copyMessage(String sourceConversationId,String targetConversationId);
 
 }

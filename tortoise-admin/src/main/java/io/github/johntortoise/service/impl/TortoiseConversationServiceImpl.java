@@ -271,7 +271,7 @@ public class TortoiseConversationServiceImpl extends ServiceImpl<TortoiseConvers
         while (true){
             Page<TortoiseMessage> tortoiseMessagePage =
                     tortoiseMessageService.queryPageByConversationId(conversationId, pageNum,
-                    100L);
+                    100L,true);
             if(EmptyUtil.isEmpty(tortoiseMessagePage.getRecords())){
                 break;
             }

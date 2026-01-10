@@ -44,9 +44,7 @@ public class TortoiseConversationToolServiceImpl extends ServiceImpl<TortoiseCon
             if(EmptyUtil.isEmpty(req.getConversationId())){
                 throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,"会话id不能为空");
             }
-            if(EmptyUtil.isEmpty(req.getToolIds())){
-                throw new TortoiseBusinessException(ErrorCodeEnum.BUSINESS_ERROR,"工具id不能为空");
-            }
+
 
             List<TortoiseConversationTool> list = queryByConversationId(req.getConversationId());
 
@@ -56,7 +54,6 @@ public class TortoiseConversationToolServiceImpl extends ServiceImpl<TortoiseCon
             }
 
             List<TortoiseConversationTool> saveDBList = new ArrayList<>();
-
             req.getToolIds().forEach(id->{
                 TortoiseConversationTool tortoiseConversationTool = new TortoiseConversationTool();
                 tortoiseConversationTool.setConversationId(req.getConversationId());
@@ -64,8 +61,9 @@ public class TortoiseConversationToolServiceImpl extends ServiceImpl<TortoiseCon
                 saveDBList.add(tortoiseConversationTool);
 
             });
-
-            this.saveBatch(saveDBList);
+            if(EmptyUtil.isNotEmpty(saveDBList)){
+                this.saveBatch(saveDBList);
+            }
             LogUtil.info("保存会话工具关联成功: conversationId={}", req.getConversationId());
             return true;
 

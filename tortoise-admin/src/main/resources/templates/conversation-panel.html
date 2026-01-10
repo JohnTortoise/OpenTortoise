@@ -134,12 +134,20 @@
 		.message-blocks > * + * { margin-top: 0.5rem; }
 	</style>
 
-	<!-- 组件脚本：封装“消息分页查询”和“按消息ID查询事件”两个接口调用 -->
+	<!-- 组件脚本：封装"消息分页查询"和"按消息ID查询事件"两个接口调用 -->
 	<script th:inline="javascript">
 		(function () {
 			const root = document.getElementById('conversation-panel-root');
 			const messagesContainer = document.getElementById('messages-container');
 			const welcomeMessage = document.getElementById('welcome-message');
+
+			// 分页状态管理
+			let currentConversationId = null;
+			let currentPage = 1;
+			let pageSize = 2;
+			let hasMore = true;
+			let isLoading = false;
+			let isInitialLoad = true;
 
 			function formatMessageContent(content) {
 				if (!content) return '';
@@ -151,10 +159,15 @@
 				messagesContainer.scrollTop = messagesContainer.scrollHeight;
 			}
 
-			function renderMessages(messages) {
+			function scrollToTop() {
 				if (!messagesContainer) return;
-				messagesContainer.innerHTML = messages.map(message => `
-					<div class="flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}">
+				messagesContainer.scrollTop = 0;
+			}
+
+			// 创建单个消息元素的HTML
+			function createMessageHTML(message) {
+				return `
+					<div class="flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}" data-message-id="${message.id}">
 						${message.role !== 'user' ? `
 							<div class="message-avatar assistant flex items-center justify-center">
 								<i class="fas fa-robot text-sm"></i>
@@ -189,11 +202,116 @@
 							</div>
 						` : ''}
 					</div>
-				`).join('');
+				`;
+			}
 
-				// 隐藏欢迎
+			function renderMessages(messages, isAppending = false) {
+				if (!messagesContainer) return;
+				
+				if (!isAppending) {
+					// 首次加载或重置，直接替换内容
+					messagesContainer.innerHTML = messages.map(createMessageHTML).join('');
+				} else {
+					// 追加加载，将新消息插入到现有消息的前面
+					const fragment = document.createDocumentFragment();
+					messages.forEach(message => {
+						const tempDiv = document.createElement('div');
+						tempDiv.innerHTML = createMessageHTML(message);
+						fragment.appendChild(tempDiv.firstElementChild);
+					});
+					
+					// 保存当前滚动位置
+					const oldScrollHeight = messagesContainer.scrollHeight;
+					const oldScrollTop = messagesContainer.scrollTop;
+					
+					// 插入到第一个消息之前
+					const firstMessage = messagesContainer.querySelector('[data-message-id]');
+					if (firstMessage) {
+						messagesContainer.insertBefore(fragment, firstMessage);
+					} else {
+						messagesContainer.appendChild(fragment);
+					}
+					
+					// 恢复滚动位置（保持用户看到的消息位置不变）
+					const newScrollHeight = messagesContainer.scrollHeight;
+					messagesContainer.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight);
+				}
+
+				// 隐藏欢迎消息
 				if (welcomeMessage) welcomeMessage.style.display = 'none';
-				scrollToBottom();
+				
+				// 首次加载时滚动到底部
+				if (isInitialLoad) {
+					setTimeout(() => {
+						scrollToBottom();
+						isInitialLoad = false;
+					}, 100);
+				}
+			}
+
+			// 滚动监听，检测是否滚动到顶部
+			let scrollListenerSetup = false;
+			function setupScrollListener() {
+				if (!messagesContainer || scrollListenerSetup) return;
+				
+				messagesContainer.addEventListener('scroll', function() {
+					// 检查是否滚动到顶部（允许一些误差，比如 50px）
+					if (messagesContainer.scrollTop <= 50 && hasMore && !isLoading && currentConversationId) {
+						loadNextPage();
+					}
+				});
+				scrollListenerSetup = true;
+			}
+
+			// 加载下一页
+			function loadNextPage() {
+				if (isLoading || !hasMore || !currentConversationId) return;
+				
+				isLoading = true;
+				const nextPage = currentPage + 1;
+				
+				// 显示加载指示器
+				const loadingIndicator = document.createElement('div');
+				loadingIndicator.id = 'loading-older-messages';
+				loadingIndicator.className = 'text-center text-gray-500 py-4';
+				loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>加载更早的消息...';
+				const firstMessage = messagesContainer.querySelector('[data-message-id]');
+				if (firstMessage) {
+					messagesContainer.insertBefore(loadingIndicator, firstMessage);
+				} else {
+					messagesContainer.appendChild(loadingIndicator);
+				}
+
+				authenticatedFetch(`/api/messages/page?conversationId=${currentConversationId}&pageNum=${nextPage}&pageSize=${pageSize}`)
+					.then(response => response.json())
+					.then(data => {
+						// 移除加载指示器
+						const indicator = document.getElementById('loading-older-messages');
+						if (indicator) indicator.remove();
+
+						if (data.code === 200 && data.data) {
+							const pageData = data.data;
+							if (pageData.records && pageData.records.length > 0) {
+								// 追加新消息到顶部
+								renderMessages(pageData.records, true);
+								currentPage = nextPage;
+								hasMore = pageData.current < pageData.pages;
+							} else {
+								hasMore = false;
+							}
+						} else {
+							hasMore = false;
+						}
+						isLoading = false;
+					})
+					.catch(error => {
+						console.error('加载更早消息失败:', error);
+						// 移除加载指示器
+						const indicator = document.getElementById('loading-older-messages');
+						if (indicator) indicator.remove();
+						isLoading = false;
+						showToast('加载更早消息失败', false);
+					});
 			}
 
 			function formatEventContent(content) {
@@ -258,15 +376,31 @@
 			window.ConversationPanel = {
 				loadMessages: function (conversationId) {
 					if (!conversationId) return;
-					authenticatedFetch(`/api/messages/page?conversationId=${conversationId}&page=1&size=100`)
+					
+					// 重置状态
+					currentConversationId = conversationId;
+					currentPage = 1;
+					hasMore = true;
+					isLoading = false;
+					isInitialLoad = true;
+					
+					authenticatedFetch(`/api/messages/page?conversationId=${conversationId}&pageNum=1&pageSize=${pageSize}`)
 						.then(response => response.json())
 						.then(data => {
-							if (data.code === 200 && data.data.records) {
-								renderMessages(data.data.records);
+							if (data.code === 200 && data.data) {
+								const pageData = data.data;
+								if (pageData.records && pageData.records.length > 0) {
+									renderMessages(pageData.records, false);
+									hasMore = pageData.current < pageData.pages;
+								} else {
+									renderMessages([], false);
+									hasMore = false;
+								}
 							}
 						})
 						.catch(() => {
 							showToast('加载消息失败', false);
+							isInitialLoad = false;
 						});
 				},
 				toggleMessageEvents: function (messageId) {
@@ -321,6 +455,9 @@
 						});
 				}
 			};
+
+			// 初始化滚动监听
+			setupScrollListener();
 		})();
 	</script>
 </div>

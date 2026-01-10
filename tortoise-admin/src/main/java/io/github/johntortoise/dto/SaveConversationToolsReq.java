@@ -18,7 +18,7 @@ public class SaveConversationToolsReq {
     @NotBlank(message = "会话ID不能为空")
     private String conversationId;
 
-    @NotEmpty(message = "工具ID列表不能为空")
+//    @NotEmpty(message = "工具ID列表不能为空")
     private List<String> toolIds;
 }
 

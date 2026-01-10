@@ -66,7 +66,10 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
         }
         
 
-        Page<TortoiseMessage> page = queryPageByConversationId(conversationId,current,size);
+        Page<TortoiseMessage> page = queryPageByConversationId(conversationId,current,size,false);
+
+        List<TortoiseMessage> records = page.getRecords();
+        records.sort(Comparator.comparing(TortoiseMessage::getId));
 
         List<MessageDTO> messages = new ArrayList<>();
 
@@ -99,11 +102,15 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
     }
 
 
-    public Page<TortoiseMessage> queryPageByConversationId(String conversationId,Long current,Long size){
+    public Page<TortoiseMessage> queryPageByConversationId(String conversationId,Long current,Long size,Boolean asc){
         LambdaQueryWrapper<TortoiseMessage> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(TortoiseMessage::getConversationId, conversationId)
-                .eq(TortoiseMessage::getIsDeleted, DeletedEnum.EXIST.getCode())
-                .orderByAsc(TortoiseMessage::getCreateTime);
+                .eq(TortoiseMessage::getIsDeleted, DeletedEnum.EXIST.getCode());
+        if(asc){
+           queryWrapper.orderByAsc(TortoiseMessage::getCreateTime).orderByAsc(TortoiseMessage::getId);
+        }else {
+            queryWrapper.orderByDesc(TortoiseMessage::getCreateTime);
+        }
         return this.baseMapper.selectPage(new Page<>(current, size), queryWrapper);
     }
 
@@ -246,28 +253,4 @@ public class TortoiseMessageServiceImpl extends ServiceImpl<TortoiseMessageMappe
                 .in(TortoiseMessage::getUniqueId,uniqueIdSet));
     }
 
-    @Override
-    public void copyMessage(String sourceConversationId, String targetConversationId) {
-        Long pageNum = 1L;
-        while (true){
-            Page<TortoiseMessage> tortoiseMessagePage = queryPageByConversationId(sourceConversationId, pageNum, 100L);
-            if(EmptyUtil.isEmpty(tortoiseMessagePage.getRecords())){
-                break;
-            }
-            List<Long> messageIdList =
-                    tortoiseMessagePage.getRecords().stream().map(TortoiseMessage::getId).collect(Collectors.toList());
-            List<TortoiseMessageExtend> tortoiseMessageExtends = tortoiseMessageExtendService.getByMessageIdList(messageIdList);
-            Map<Long, TortoiseMessageExtend> messageIdToExtentMap =
-                    tortoiseMessageExtends.stream().collect(Collectors.toMap(TortoiseMessageExtend::getMessageId,
-                    Function.identity()));
-            Map<String,TortoiseMessage> map = new HashMap<>();
-            for(TortoiseMessage tortoiseMessage:tortoiseMessagePage.getRecords()){
-                map.put(tortoiseMessage.getConversationId(),tortoiseMessage);
-                tortoiseMessage.setId(null);
-                tortoiseMessage.setConversationId(targetConversationId);
-            }
-            this.saveBatch(tortoiseMessagePage.getRecords());
-
-        }
-    }
 }
