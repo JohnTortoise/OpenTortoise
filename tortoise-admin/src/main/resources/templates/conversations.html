@@ -37,8 +37,9 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">会话ID</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户ID</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LLM配置ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">聊天配置</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">模型配置</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">记忆策略</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">更新时间</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -47,7 +48,7 @@
                     <tbody id="conversations-table-body" class="bg-white divide-y divide-gray-200">
                         <!-- Rows will be populated by JavaScript -->
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
                                 加载中...
                             </td>
                         </tr>
@@ -231,6 +232,7 @@
         </div>
     </div>
     
+
     <!-- Cost Modal -->
     <div id="cost-modal" class="modal fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -637,7 +639,7 @@
                         // 错误消息已在handleApiResponse中显示toast
                         conversationsTableBody.innerHTML = `
                             <tr>
-                                <td colspan="6" class="px-6 py-4 text-center text-sm text-red-500">
+                                <td colspan="7" class="px-6 py-4 text-center text-sm text-red-500">
                                     加载数据失败，请稍后重试
                                 </td>
                             </tr>
@@ -649,7 +651,7 @@
                 if (!conversations || conversations.length === 0) {
                     conversationsTableBody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
                                 暂无数据
                             </td>
                         </tr>
@@ -660,8 +662,9 @@
                 conversationsTableBody.innerHTML = conversations.map(conversation => `
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${conversation.conversationId || ''}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.createUserId || ''}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.llmConfigId || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.tortoiseChatProfileIdName || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.llmConfigName || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.memoryPolicyName || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.createTime || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${conversation.updateTime || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1066,19 +1069,20 @@
             function closeMemoryModal() {
                 const memoryModal = document.getElementById('memory-modal');
                 const scrollContainer = document.getElementById('memories-scroll-container');
-                
+
                 // 移除滚动事件监听器
                 scrollContainer.removeEventListener('scroll', handleMemoryScroll);
-                
+
                 // 重置模态框状态
                 memoryModal.classList.remove('active');
                 memoryModal.conversationId = null;
                 memoryModal.loading = false;
-                
+
                 // 隐藏加载指示器和无更多消息提示
                 document.getElementById('memory-loading-indicator').classList.add('hidden');
                 document.getElementById('no-more-memories').classList.add('hidden');
             }
+
             
             // Cost Modal Functions
             function showCost(conversationId) {

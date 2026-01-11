@@ -125,34 +125,6 @@
         .logo-container {
             /* Removed animation and glow effect */
         }
-        
-        /* Checkbox custom style */
-        .custom-checkbox {
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            border: 2px solid #3b82f6;
-            border-radius: 4px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .custom-checkbox:checked {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            border-color: #3b82f6;
-        }
-        
-        .custom-checkbox:checked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
@@ -196,18 +168,6 @@
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
-                    </div>
-                    
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input id="remember-me" name="remember-me" type="checkbox" class="custom-checkbox">
-                            <label for="remember-me" class="ml-4 text-base text-gray-700 cursor-pointer">
-                                记住我
-                            </label>
-                        </div>
-                        <a href="#" class="text-base font-medium text-blue-600 hover:text-blue-800 transition">
-                            忘记密码？
-                        </a>
                     </div>
                     
                     <button type="submit" id="loginBtn"
